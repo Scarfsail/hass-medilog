@@ -1,0 +1,9 @@
+{
+  "domain": "medilog",
+  "name": "MediLog",
+  "version": "1.0.0",
+  "dependencies": [],
+  "codeowners": ["@scarfsail"],
+  "requirements": [],
+  "config_flow": true
+}
