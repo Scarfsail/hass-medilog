@@ -73,3 +73,8 @@ get_records:
       selector:
         entity:
           domain: person
+
+get_person_list:
+  name: Get Person List
+  description: "Retrieve the list of all persons tracked by medilog."
+  fields: {}

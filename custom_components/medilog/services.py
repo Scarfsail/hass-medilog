@@ -13,6 +13,7 @@ _LOGGER = logging.getLogger(__name__)
 SERVICE_ADD_UPDATE = "add_or_update_record"
 SERVICE_DELETE = "delete_record"
 SERVICE_GET_RECORDS = "get_records"
+SERVICE_GET_PERSON_LIST = "get_person_list"
 
 SERVICE_ADD_UPDATE_SCHEMA = vol.Schema(
     {
@@ -36,6 +37,8 @@ SERVICE_GET_RECORDS_SCHEMA = vol.Schema(
         vol.Required("person_id"): cv.string,
     }
 )
+
+SERVICE_GET_PERSON_LIST_SCHEMA = vol.Schema({})
 
 
 async def async_setup_services(hass: HomeAssistant, coordinator: MedilogCoordinator):
@@ -86,6 +89,14 @@ async def async_setup_services(hass: HomeAssistant, coordinator: MedilogCoordina
         records = storage.get_records()
         return {"records:": records}
 
+    async def handle_get_person_list(call):
+        try:
+            person_list = coordinator.get_person_list()
+            return {"persons": person_list}
+        except Exception as err:
+            _LOGGER.error("Error retrieving person list: %s", err)
+            return {"persons": []}
+
     hass.services.async_register(
         domain=DOMAIN,
         service=SERVICE_ADD_UPDATE,
@@ -105,6 +116,14 @@ async def async_setup_services(hass: HomeAssistant, coordinator: MedilogCoordina
         service=SERVICE_GET_RECORDS,
         service_func=handle_get_records,
         schema=SERVICE_GET_RECORDS_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
+    )
+
+    hass.services.async_register(
+        domain=DOMAIN,
+        service=SERVICE_GET_PERSON_LIST,
+        service_func=handle_get_person_list,
+        schema=SERVICE_GET_PERSON_LIST_SCHEMA,
         supports_response=SupportsResponse.ONLY,
     )
 
