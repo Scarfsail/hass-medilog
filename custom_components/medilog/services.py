@@ -87,7 +87,7 @@ async def async_setup_services(hass: HomeAssistant, coordinator: MedilogCoordina
             return
 
         records = storage.get_records()
-        return {"records:": records}
+        return {"records": records}
 
     async def handle_get_person_list(call):
         try:
