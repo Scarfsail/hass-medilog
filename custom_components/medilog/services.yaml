@@ -9,6 +9,12 @@ add_or_update_record:
       selector:
         entity:
           domain: person
+    id:
+      description: "ID of the record (e.g., 09402d80bba64cefb074315f4dc605e5)."
+      example: "09402d80bba64cefb074315f4dc605e5"
+      required: false
+      selector:
+        text:
 
     datetime:
       description: "ISO-formatted datetime for the record (e.g., 2025-02-25T14:30:00)."
@@ -55,12 +61,12 @@ delete_record:
         entity:
           domain: person
 
-    datetime:
-      description: "ISO-formatted datetime of the record to be deleted."
-      example: "2025-02-25T14:30:00"
+    id:
+      description: "ID of the record to be deleted."
+      example: "09402d80bba64cefb074315f4dc605e5"
       required: true
       selector:
-        datetime:
+        text:
 
 get_records:
   name: Get Records

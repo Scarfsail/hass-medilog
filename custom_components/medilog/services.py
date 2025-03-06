@@ -18,6 +18,7 @@ SERVICE_GET_PERSON_LIST = "get_person_list"
 SERVICE_ADD_UPDATE_SCHEMA = vol.Schema(
     {
         vol.Required("person_id"): cv.string,
+        vol.Optional("id"): cv.string,
         vol.Required("datetime"): cv.string,
         vol.Optional("temperature"): vol.Coerce(float),
         vol.Optional("pill"): cv.string,
@@ -28,7 +29,7 @@ SERVICE_ADD_UPDATE_SCHEMA = vol.Schema(
 SERVICE_DELETE_SCHEMA = vol.Schema(
     {
         vol.Required("person_id"): cv.string,
-        vol.Required("datetime"): cv.string,
+        vol.Required("id"): cv.string,
     }
 )
 
@@ -46,6 +47,7 @@ async def async_setup_services(hass: HomeAssistant, coordinator: MedilogCoordina
 
     async def handle_add_or_update(call):
         person_id = call.data["person_id"]
+        record_id = call.data.get("id")
         record_datetime = call.data["datetime"]
         temperature = call.data.get("temperature")
         pill = call.data.get("pill")
@@ -57,16 +59,21 @@ async def async_setup_services(hass: HomeAssistant, coordinator: MedilogCoordina
             return
 
         try:
-            storage.add_or_update_record(record_datetime, temperature, pill, note)
+            storage.add_or_update_record(
+                record_id, record_datetime, temperature, pill, note
+            )
             _LOGGER.info(
-                "Record added/updated for %s at %s", person_id, record_datetime
+                "Record added/updated for %s at %s with ID %s",
+                person_id,
+                record_datetime,
+                record_id,
             )
         except Exception as err:
             _LOGGER.error("Error adding/updating record for %s: %s", person_id, err)
 
     async def handle_delete_record(call):
         person_id = call.data["person_id"]
-        record_datetime = call.data["datetime"]
+        record_id = call.data["id"]
 
         storage = coordinator.get_storage(person_id)
         if storage is None:
@@ -74,10 +81,12 @@ async def async_setup_services(hass: HomeAssistant, coordinator: MedilogCoordina
             return
 
         try:
-            storage.delete_record(record_datetime)
-            _LOGGER.info("Record deleted for %s at %s", person_id, record_datetime)
+            storage.delete_record(record_id)
+            _LOGGER.info("Record deleted for %s with ID %s", person_id, record_id)
         except Exception as err:
-            _LOGGER.error("Error deleting record for %s: %s", person_id, err)
+            _LOGGER.error(
+                "Error deleting record for %s with ID %s: %s", person_id, record_id, err
+            )
 
     async def handle_get_records(call):
         person_id = call.data["person_id"]

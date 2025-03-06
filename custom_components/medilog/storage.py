@@ -3,6 +3,7 @@ import json
 import asyncio
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.helpers.dispatcher import async_dispatcher_send
+import uuid
 
 
 class MedilogStorage:
@@ -36,6 +37,7 @@ class MedilogStorage:
 
     def add_or_update_record(
         self,
+        id: str | None,
         record_datetime: str,
         temperature: float = None,
         pill: str = None,
@@ -43,34 +45,31 @@ class MedilogStorage:
     ):
         updated = False
         for record in self.data["records"]:
-            if record.get("datetime") == record_datetime:
-                if temperature is not None:
-                    record["temperature"] = temperature
-                if pill is not None:
-                    record["pill"] = pill
-                if note is not None:
-                    record["note"] = note
+            if record.get("id") == id:
+                record["datetime"] = record_datetime
+                record["temperature"] = temperature
+                record["pill"] = pill
+                record["note"] = note
                 updated = True
                 break
 
         if not updated:
             new_record = {
+                "id": uuid.uuid4().hex,
                 "datetime": record_datetime,
                 "temperature": temperature,
                 "pill": pill,
                 "note": note,
             }
-            self.data["records"].append(new_record)
+            self.data["records"].insert(0, new_record)
 
         self.save()
 
-    def delete_record(self, record_datetime: str):
+    def delete_record(self, record_id: str):
         original_count = len(self.data["records"])
         self.data["records"] = [
-            record
-            for record in self.data["records"]
-            if record.get("datetime") != record_datetime
+            record for record in self.data["records"] if record.get("id") != record_id
         ]
         if len(self.data["records"]) == original_count:
-            raise ValueError("Record with the specified datetime not found.")
+            raise ValueError("Record with the specified id not found.")
         self.save()
