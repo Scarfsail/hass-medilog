@@ -40,7 +40,7 @@ class MedilogStorage:
         id: str | None,
         record_datetime: str,
         temperature: float = None,
-        pill: str = None,
+        medication: str = None,
         note: str = None,
     ):
         updated = False
@@ -48,7 +48,7 @@ class MedilogStorage:
             if record.get("id") == id:
                 record["datetime"] = record_datetime
                 record["temperature"] = temperature
-                record["pill"] = pill
+                record["medication"] = medication
                 record["note"] = note
                 updated = True
                 break
@@ -58,7 +58,7 @@ class MedilogStorage:
                 "id": uuid.uuid4().hex,
                 "datetime": record_datetime,
                 "temperature": temperature,
-                "pill": pill,
+                "medication": medication,
                 "note": note,
             }
             self.data["records"].insert(0, new_record)

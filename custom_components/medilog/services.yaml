@@ -34,8 +34,8 @@ add_or_update_record:
           step: 0.1
           unit_of_measurement: "°C"
 
-    pill:
-      description: "Optional pill name (e.g., 'aspirin')."
+    medication:
+      description: "Optional medication name (e.g., 'aspirin')."
       example: "aspirin"
       required: false
       selector:
