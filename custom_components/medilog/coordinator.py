@@ -48,7 +48,18 @@ class MedilogCoordinator(DataUpdateCoordinator):
             self.person_storages[entity_id] = storage
 
     def get_person_list(self):
-        return list(self.person_storages.keys())
+        result = []
+        for entity_id, storage in self.person_storages.items():
+            recent_record = None
+            if storage.data and len(storage.data) > 0:
+                # Get the most recent record based on timestamp
+                recent_record = max(
+                    storage.data.get("records"),
+                    key=lambda x: x.get("datetime", 0),
+                    default=None,
+                )
+            result.append({"entity": entity_id, "recent_record": recent_record})
+        return result
 
     async def _async_update_data(self):
         """
