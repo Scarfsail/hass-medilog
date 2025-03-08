@@ -4,6 +4,8 @@ import asyncio
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 import uuid
+import datetime
+import shutil
 
 
 class MedilogStorage:
@@ -27,6 +29,16 @@ class MedilogStorage:
             self.data = {"entity": self.entity, "records": []}
 
     def save(self):
+        # First, create a backup of the existing file if it exists
+        if os.path.exists(self.file_path):
+            backup_suffix = datetime.datetime.now().isoformat().replace(":", "-")
+            backup_path = f"{self.file_path}.{backup_suffix}"
+            try:
+                shutil.copy2(self.file_path, backup_path)
+            except Exception:
+                pass  # Continue even if backup fails
+
+        # Then save the current data
         with open(self.file_path, "w") as f:
             json.dump(self.data, f, indent=2)
         if self.on_change_callback:
