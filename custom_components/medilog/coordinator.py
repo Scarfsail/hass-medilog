@@ -20,7 +20,6 @@ class MedilogCoordinator(DataUpdateCoordinator):
         self.storage_directory = Path(hass.config.path(".storage", DOMAIN))
         self.storage_directory.mkdir(exist_ok=True)
         self.person_storages: dict[str, MedilogStorage] = {}
-        self._setup_person_storages()
         # No periodic polling needed, so update_interval is None.
         super().__init__(
             hass,
@@ -29,13 +28,17 @@ class MedilogCoordinator(DataUpdateCoordinator):
             update_interval=None,
         )
 
+    async def async_setup(self):
+        """Setup the coordinator and load storage files."""
+        await self._async_setup_person_storages()
+
     def _on_storage_changed(self, entity_id: str):
         # Trigger an update for the specific person.
         # Here, we could dispatch a signal or call async_set_updated_data.
 
         self.async_set_updated_data({entity_id: self.person_storages[entity_id]})
 
-    def _setup_person_storages(self):
+    async def _async_setup_person_storages(self):
         person_list = self.config_entry.options.get(CONF_PERSON_LIST, [])
         for entity_id in person_list:
             file_name = f"medilog_{entity_id.replace('.', '_')}.json"
@@ -45,6 +48,7 @@ class MedilogCoordinator(DataUpdateCoordinator):
                 file_path=file_path,
                 on_change_callback=self._on_storage_changed,
             )
+            await storage.async_load()
             self.person_storages[entity_id] = storage
 
     def get_person_list(self):

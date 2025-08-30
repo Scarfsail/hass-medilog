@@ -14,40 +14,48 @@ class MedilogStorage:
         self.file_path = file_path
         self.on_change_callback = on_change_callback
         self.data = {"entity": self.entity, "records": []}
-        self.load()
 
-    def load(self):
+    async def async_load(self):
         if os.path.exists(self.file_path):
             try:
-                with open(self.file_path, "r") as f:
-                    loaded_data = json.load(f)
-                    if loaded_data.get("entity") == self.entity:
-                        self.data = loaded_data
-            except json.JSONDecodeError:
+                # Use asyncio.to_thread for file operations to avoid blocking
+                def load_data():
+                    with open(self.file_path, "r") as f:
+                        return json.load(f)
+                
+                loaded_data = await asyncio.to_thread(load_data)
+                if loaded_data.get("entity") == self.entity:
+                    self.data = loaded_data
+            except (json.JSONDecodeError, FileNotFoundError):
                 self.data = {"entity": self.entity, "records": []}
         else:
             self.data = {"entity": self.entity, "records": []}
 
-    def save(self):
+    async def async_save(self):
         # First, create a backup of the existing file if it exists
         if os.path.exists(self.file_path):
             backup_suffix = datetime.datetime.now().isoformat().replace(":", "-")
             backup_path = f"{self.file_path}.{backup_suffix}"
             try:
-                shutil.copy2(self.file_path, backup_path)
+                # Use asyncio.to_thread for the synchronous backup operation
+                await asyncio.to_thread(shutil.copy2, self.file_path, backup_path)
             except Exception:
                 pass  # Continue even if backup fails
 
-        # Then save the current data
-        with open(self.file_path, "w") as f:
-            json.dump(self.data, f, indent=2)
+        # Then save the current data using asyncio.to_thread
+        def save_data():
+            with open(self.file_path, "w") as f:
+                json.dump(self.data, f, indent=2)
+        
+        await asyncio.to_thread(save_data)
+        
         if self.on_change_callback:
             self.on_change_callback(self.entity)
 
     def get_records(self):
         return self.data["records"]
 
-    def add_or_update_record(
+    async def async_add_or_update_record(
         self,
         id: str | None,
         record_datetime: str,
@@ -75,13 +83,13 @@ class MedilogStorage:
             }
             self.data["records"].insert(0, new_record)
 
-        self.save()
+        await self.async_save()
 
-    def delete_record(self, record_id: str):
+    async def async_delete_record(self, record_id: str):
         original_count = len(self.data["records"])
         self.data["records"] = [
             record for record in self.data["records"] if record.get("id") != record_id
         ]
         if len(self.data["records"]) == original_count:
             raise ValueError("Record with the specified id not found.")
-        self.save()
+        await self.async_save()

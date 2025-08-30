@@ -59,7 +59,7 @@ async def async_setup_services(hass: HomeAssistant, coordinator: MedilogCoordina
             return
 
         try:
-            storage.add_or_update_record(
+            await storage.async_add_or_update_record(
                 record_id, record_datetime, temperature, medication, note
             )
             _LOGGER.info(
@@ -81,7 +81,7 @@ async def async_setup_services(hass: HomeAssistant, coordinator: MedilogCoordina
             return
 
         try:
-            storage.delete_record(record_id)
+            await storage.async_delete_record(record_id)
             _LOGGER.info("Record deleted for %s with ID %s", person_id, record_id)
         except Exception as err:
             _LOGGER.error(
