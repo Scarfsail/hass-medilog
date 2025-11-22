@@ -22,7 +22,7 @@ class MedilogStorage:
                 def load_data():
                     with open(self.file_path, "r") as f:
                         return json.load(f)
-                
+
                 loaded_data = await asyncio.to_thread(load_data)
                 if loaded_data.get("entity") == self.entity:
                     self.data = loaded_data
@@ -46,9 +46,9 @@ class MedilogStorage:
         def save_data():
             with open(self.file_path, "w") as f:
                 json.dump(self.data, f, indent=2)
-        
+
         await asyncio.to_thread(save_data)
-        
+
         if self.on_change_callback:
             self.on_change_callback(self.entity)
 
@@ -61,6 +61,7 @@ class MedilogStorage:
         record_datetime: str,
         temperature: float = None,
         medication: str = None,
+        medication_amount: float = 1.0,
         note: str = None,
     ):
         updated = False
@@ -69,6 +70,7 @@ class MedilogStorage:
                 record["datetime"] = record_datetime
                 record["temperature"] = temperature
                 record["medication"] = medication
+                record["medication_amount"] = medication_amount
                 record["note"] = note
                 updated = True
                 break
@@ -79,6 +81,7 @@ class MedilogStorage:
                 "datetime": record_datetime,
                 "temperature": temperature,
                 "medication": medication,
+                "medication_amount": medication_amount,
                 "note": note,
             }
             self.data["records"].insert(0, new_record)

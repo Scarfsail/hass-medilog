@@ -22,6 +22,7 @@ SERVICE_ADD_UPDATE_SCHEMA = vol.Schema(
         vol.Required("datetime"): cv.string,
         vol.Optional("temperature"): vol.Coerce(float),
         vol.Optional("medication"): cv.string,
+        vol.Optional("medication_amount"): vol.Coerce(float),
         vol.Optional("note"): cv.string,
     }
 )
@@ -51,6 +52,7 @@ async def async_setup_services(hass: HomeAssistant, coordinator: MedilogCoordina
         record_datetime = call.data["datetime"]
         temperature = call.data.get("temperature")
         medication = call.data.get("medication")
+        medication_amount = call.data.get("medication_amount", 1.0)
         note = call.data.get("note")
 
         storage = coordinator.get_storage(person_id)
@@ -60,7 +62,12 @@ async def async_setup_services(hass: HomeAssistant, coordinator: MedilogCoordina
 
         try:
             await storage.async_add_or_update_record(
-                record_id, record_datetime, temperature, medication, note
+                record_id,
+                record_datetime,
+                temperature,
+                medication,
+                medication_amount,
+                note,
             )
             _LOGGER.info(
                 "Record added/updated for %s at %s with ID %s",
