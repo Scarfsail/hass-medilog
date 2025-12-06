@@ -1,4 +1,7 @@
+"""Service definitions for Medilog custom component."""
+
 import logging
+from typing import Any
 
 import voluptuous as vol
 
@@ -75,7 +78,7 @@ async def async_setup_services(hass: HomeAssistant, coordinator: MedilogCoordina
                 record_datetime,
                 record_id,
             )
-        except Exception as err:
+        except OSError as err:
             _LOGGER.error("Error adding/updating record for %s: %s", person_id, err)
 
     async def handle_delete_record(call):
@@ -90,28 +93,31 @@ async def async_setup_services(hass: HomeAssistant, coordinator: MedilogCoordina
         try:
             await storage.async_delete_record(record_id)
             _LOGGER.info("Record deleted for %s with ID %s", person_id, record_id)
-        except Exception as err:
+        except (ValueError, OSError) as err:
             _LOGGER.error(
                 "Error deleting record for %s with ID %s: %s", person_id, record_id, err
             )
 
-    async def handle_get_records(call):
+    async def handle_get_records(call) -> dict[str, Any]:
+        """Handle get records service call."""
         person_id = call.data["person_id"]
         storage = coordinator.get_storage(person_id)
         if storage is None:
             _LOGGER.error("No storage found for person: %s", person_id)
-            return
+            return {"records": []}
 
         records = storage.get_records()
         return {"records": records}
 
-    async def handle_get_person_list(call):
+    async def handle_get_person_list(call) -> dict[str, Any]:
+        """Handle get person list service call."""
         try:
             person_list = coordinator.get_person_list()
-            return {"persons": person_list}
-        except Exception as err:
+        except OSError as err:
             _LOGGER.error("Error retrieving person list: %s", err)
             return {"persons": []}
+        else:
+            return {"persons": person_list}
 
     hass.services.async_register(
         domain=DOMAIN,

@@ -1,12 +1,13 @@
-"""Config flow for the Alarmo component."""
+"""Config flow for the Medilog component."""
 
 import secrets
 
-from homeassistant import config_entries
 import voluptuous as vol
 
-from .const import DOMAIN, NAME, CONF_PERSON_LIST
+from homeassistant import config_entries
 from homeassistant.helpers import selector
+
+from .const import CONF_PERSON_LIST, DOMAIN, NAME
 
 
 class MedilogFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -22,9 +23,9 @@ class MedilogFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if self._async_current_entries():
             return self.async_abort(reason="single_instance_allowed")
 
-        id = secrets.token_hex(6)
+        unique_id = secrets.token_hex(6)
 
-        await self.async_set_unique_id(id)
+        await self.async_set_unique_id(unique_id)
         self._abort_if_unique_id_configured(updates=user_input)
 
         return self.async_create_entry(title=NAME, data={})
@@ -38,14 +39,12 @@ class MedilogFlow(config_entries.ConfigFlow, domain=DOMAIN):
 class OptionsFlowHandler(config_entries.OptionsFlow):
     """Handle options flow."""
 
-    def __init__(self, config_entry):
+    def __init__(self, config_entry) -> None:
         """Initialize options flow."""
-        self.config_entry = config_entry
+        super().__init__()
 
     async def async_step_init(self, user_input=None):
         """Manage the options."""
-        errors = {}
-
         if user_input is not None:
             # Use config_entry.options instead of config_entry.data for defaults
             return self.async_create_entry(
