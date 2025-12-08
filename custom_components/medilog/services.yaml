@@ -34,9 +34,9 @@ add_or_update_record:
           step: 0.1
           unit_of_measurement: "°C"
 
-    medication:
-      description: "Optional medication name (e.g., 'aspirin')."
-      example: "aspirin"
+    medication_id:
+      description: "Optional medication ID reference (from medication database)."
+      example: "a1b2c3d4e5f6"
       required: false
       selector:
         text:
@@ -94,3 +94,71 @@ get_person_list:
   name: Get Person List
   description: "Retrieve the list of all persons tracked by medilog."
   fields: {}
+
+# Medication Management Services
+add_or_update_medication:
+  name: Add or Update Medication
+  description: "Add a new medication or update an existing one in the medication database."
+  fields:
+    id:
+      description: "ID of the medication for updates (omit for new medications)."
+      example: "a1b2c3d4e5f6"
+      required: false
+      selector:
+        text:
+
+    name:
+      description: "Name of the medication (must be unique)."
+      example: "Tantum Verde"
+      required: true
+      selector:
+        text:
+
+    units:
+      description: "Optional units for the medication amount (e.g., 'tablets', 'ml', 'sprays')."
+      example: "tablets"
+      required: false
+      selector:
+        text:
+
+    is_antipyretic:
+      description: "Whether the medication is antipyretic (fever-reducing)."
+      example: false
+      required: false
+      default: false
+      selector:
+        boolean:
+
+    active_ingredient:
+      description: "Optional active ingredient of the medication."
+      example: "benzydamine hydrochloride"
+      required: false
+      selector:
+        text:
+
+delete_medication:
+  name: Delete Medication
+  description: "Delete a medication from the database. Cannot delete if medication is referenced by any records."
+  fields:
+    id:
+      description: "ID of the medication to delete."
+      example: "a1b2c3d4e5f6"
+      required: true
+      selector:
+        text:
+
+get_medications:
+  name: Get Medications
+  description: "Retrieve all medications from the medication database."
+  fields: {}
+
+get_medication:
+  name: Get Medication
+  description: "Retrieve a specific medication by ID."
+  fields:
+    id:
+      description: "ID of the medication to retrieve."
+      example: "a1b2c3d4e5f6"
+      required: true
+      selector:
+        text:

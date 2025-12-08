@@ -77,7 +77,7 @@ class MedilogStorage:
         id: str | None,
         record_datetime: str,
         temperature: float | None = None,
-        medication: str | None = None,
+        medication_id: str | None = None,
         medication_amount: float = 1.0,
         note: str | None = None,
     ) -> None:
@@ -87,7 +87,7 @@ class MedilogStorage:
             id: Record ID (None for new records)
             record_datetime: ISO datetime string
             temperature: Body temperature value
-            medication: Medication name
+            medication_id: Medication ID reference
             medication_amount: Medication dosage amount
             note: Additional notes
 
@@ -97,7 +97,7 @@ class MedilogStorage:
             if record.get("id") == id:
                 record["datetime"] = record_datetime
                 record["temperature"] = temperature
-                record["medication"] = medication
+                record["medication_id"] = medication_id
                 record["medication_amount"] = medication_amount
                 record["note"] = note
                 updated = True
@@ -108,7 +108,7 @@ class MedilogStorage:
                 "id": uuid.uuid4().hex,
                 "datetime": record_datetime,
                 "temperature": temperature,
-                "medication": medication,
+                "medication_id": medication_id,
                 "medication_amount": medication_amount,
                 "note": note,
             }
