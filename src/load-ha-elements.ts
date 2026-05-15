@@ -1,6 +1,6 @@
 export const loadHaForm = async () => {
 
-    if (customElements.get('ha-checkbox') && customElements.get('ha-slider') && !customElements.get('ha-panel-config')) return;
+    if (customElements.get('ha-input') && customElements.get('ha-selector')) return;
     await customElements.whenDefined('partial-panel-resolver');
     const ppr = document.createElement('partial-panel-resolver') as any;
     ppr.hass = {
@@ -18,6 +18,8 @@ export const loadHaForm = async () => {
   
     const cpr = document.createElement('ha-panel-config') as any;
     await cpr.routerOptions.routes.automation.load();
+
+    await customElements.whenDefined('ha-input');
   };
   
   export const loadHaYamlEditor = async () => {

@@ -26,7 +26,7 @@ export class MedilogMedicationDialog extends LitElement {
         .field {
             margin-bottom: 16px;
         }
-        .field ha-textfield {
+        .field ha-input {
             min-width: 426px;
         }
         .error {
@@ -123,7 +123,7 @@ export class MedilogMedicationDialog extends LitElement {
             <ha-dialog open .hass=${this.hass} .headerTitle=${dialogTitle} @closed=${() => this._handleClose()}>
                 <div class="form-container">
                     <div class="field">
-                        <ha-textfield
+                        <ha-input
                             .label=${this._localize('medication_dialog.name')}
                             .value=${this._formData.name}
                             required
@@ -132,19 +132,19 @@ export class MedilogMedicationDialog extends LitElement {
                 this._formData = { ...this._formData, name: (e.target as HTMLInputElement).value };
                 delete this._errors.name;
             }}
-                        ></ha-textfield>
+                        ></ha-input>
                         ${this._errors.name ? html`<div class="error">${this._errors.name}</div>` : nothing}
                     </div>
 
                     <div class="field">
-                        <ha-textfield
+                        <ha-input
                             .label=${this._localize('medication_dialog.units')}
                             .value=${this._formData.units}
                             class="fill"
                             @input=${(e: Event) => {
                 this._formData = { ...this._formData, units: (e.target as HTMLInputElement).value };
             }}
-                        ></ha-textfield>
+                        ></ha-input>
                     </div>
 
                     <div class="checkbox-field">
@@ -158,14 +158,14 @@ export class MedilogMedicationDialog extends LitElement {
                     </div>
 
                     <div class="field">
-                        <ha-textfield
+                        <ha-input
                             .label=${this._localize('medication_dialog.active_ingredient')}
                             .value=${this._formData.active_ingredient}
                             class="fill"
                             @input=${(e: Event) => {
                 this._formData = { ...this._formData, active_ingredient: (e.target as HTMLInputElement).value };
             }}
-                        ></ha-textfield>
+                        ></ha-input>
                     </div>
                 </div>
 

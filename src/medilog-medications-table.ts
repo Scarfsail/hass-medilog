@@ -122,44 +122,44 @@ export class MedilogMedicationsTable extends LitElement {
                     <thead>
                         <tr>
                             <th>
-                                <ha-textfield
+                                <ha-input
                                     class="filter-field"
                                     .label=${this._localize('medications_manager.column_name')}
                                     .value=${this._filterName}
                                     @input=${(e: Event) => {
                                         this._filterName = (e.target as HTMLInputElement).value;
                                     }}
-                                ></ha-textfield>
+                                ></ha-input>
                             </th>
                             <th>
-                                <ha-textfield
+                                <ha-input
                                     class="filter-field"
                                     .label=${this._localize('medications_manager.column_units')}
                                     .value=${this._filterUnits}
                                     @input=${(e: Event) => {
                                         this._filterUnits = (e.target as HTMLInputElement).value;
                                     }}
-                                ></ha-textfield>
+                                ></ha-input>
                             </th>
                             <th>
-                                <ha-textfield
+                                <ha-input
                                     class="filter-field"
                                     .label=${this._localize('medications_manager.column_antipyretic')}
                                     .value=${this._filterAntipyretic}
                                     @input=${(e: Event) => {
                                         this._filterAntipyretic = (e.target as HTMLInputElement).value;
                                     }}
-                                ></ha-textfield>
+                                ></ha-input>
                             </th>
                             <th>
-                                <ha-textfield
+                                <ha-input
                                     class="filter-field"
                                     .label=${this._localize('medications_manager.column_ingredient')}
                                     .value=${this._filterIngredient}
                                     @input=${(e: Event) => {
                                         this._filterIngredient = (e.target as HTMLInputElement).value;
                                     }}
-                                ></ha-textfield>
+                                ></ha-input>
                             </th>
                             <th>${this._localize('medications_manager.column_usage')}</th>
                         </tr>

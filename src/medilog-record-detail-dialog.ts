@@ -125,14 +125,14 @@ export class MedilogRecordDetailDialog extends LitElement {
                     <div>
                         <div class="medication-row">
                             <div class="medication-field-wrapper">
-                                <ha-textfield
+                                <ha-input
                                     class="medication-field"
                                     .label=${this._localize('dialog.medication')}
                                     .value=${this._getMedicationName()}
                                     readonly
-                                    @focus=${this._openMedicationPicker}
+                                    @click=${this._openMedicationPicker}
                                 >
-                                </ha-textfield>
+                                </ha-input>
                                 ${this._editedRecord.medication_id ? html`
                                     <ha-icon-button
                                         class="medication-clear-btn"
@@ -141,7 +141,7 @@ export class MedilogRecordDetailDialog extends LitElement {
                                     ></ha-icon-button>
                                 ` : nothing}
                             </div>
-                            <ha-textfield
+                            <ha-input
                                 class="amount-field"
                                 .label=${this._localize('dialog.medication_amount')}
                                 .value=${this._editedRecord.medication_amount ?? ""}
@@ -153,11 +153,11 @@ export class MedilogRecordDetailDialog extends LitElement {
                 const value = (e.target as HTMLInputElement).value;
                 this._editedRecord = { ...this._editedRecord!, medication_amount: value ? parseFloat(value) : undefined };
             }}
-                            ></ha-textfield>
+                            ></ha-input>
                         </div>
                         ${this._renderLastTaken()}
                     </div>
-                    <ha-textfield .label=${this._localize('dialog.notes')} .value=${this._editedRecord.note ?? ""} class="fill field" @change=${(e: Event) => { this._editedRecord = { ...this._editedRecord!, note: (e.target as HTMLTextAreaElement).value }; }}></ha-textfield>
+                    <ha-input .label=${this._localize('dialog.notes')} .value=${this._editedRecord.note ?? ""} class="fill field" @change=${(e: Event) => { this._editedRecord = { ...this._editedRecord!, note: (e.target as HTMLTextAreaElement).value }; }}></ha-input>
                     ${this._editedRecord.temperature !== undefined ? html`
                         <p >
                             <strong>${this._localize('dialog.temperature')}:</strong> ${this._editedRecord.temperature}

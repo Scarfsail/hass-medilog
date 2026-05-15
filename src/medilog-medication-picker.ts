@@ -152,7 +152,7 @@ export class MedilogMedicationPicker extends LitElement {
             <ha-dialog open .heading=${false} @closed=${this._handleClose} @close-dialog=${this._handleClose} @opened=${this._handleOpened}>
                 <div class="dialog-content">
                     <div class="filter-container">
-                        <ha-textfield
+                        <ha-input
                             id="filter-input"
                             class="filter-input"
                             .label=${this._localize('medication_picker.filter_placeholder')}
@@ -162,7 +162,7 @@ export class MedilogMedicationPicker extends LitElement {
                                 this._filterText = (e.target as HTMLInputElement).value;
                             }}
                             @keydown=${this._handleKeyDown}
-                        ></ha-textfield>
+                        ></ha-input>
                     </div>
 
                     <div class="table-container">
