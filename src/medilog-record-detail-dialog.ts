@@ -29,6 +29,18 @@ export class MedilogRecordDetailDialog extends LitElement {
         .fill {
             width: 100%;
         }
+        .datetime-field {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        /* ha-selector-datetime centers its date/time inputs in its own
+           shadow DOM, so we compose ha-date-input/ha-time-input directly to
+           control alignment. The hidden ha-selector below only exists to
+           trigger HA's lazy registration of those two elements. */
+        .dt-loader {
+            display: none;
+        }
         .field {
             margin-bottom: 5px;
         }
@@ -114,11 +126,21 @@ export class MedilogRecordDetailDialog extends LitElement {
             <ha-dialog open .hass=${this.hass} .headerTitle=${dialogTitle} @closed=${() => this.closeDialog()}>
                 <div class="wrapper">
                     <div class="datetime-field">
+                        <ha-date-input
+                            .locale=${this.hass.locale}
+                            .value=${this._editedRecord.datetime.format("YYYY-MM-DD")}
+                            @value-changed=${(e: CustomEvent) => this._applyDateTime(e.detail.value, undefined)}
+                        ></ha-date-input>
+                        <ha-time-input
+                            enable-second
+                            .locale=${this.hass.locale}
+                            .value=${this._editedRecord.datetime.format("HH:mm:ss")}
+                            @value-changed=${(e: CustomEvent) => this._applyDateTime(undefined, e.detail.value)}
+                        ></ha-time-input>
                         <ha-selector
+                            class="dt-loader"
                             .hass=${this.hass}
                             .selector=${{ datetime: {} }}
-                            .value=${this._editedRecord.datetime.format("YYYY-MM-DD HH:mm:ss")}
-                            @value-changed=${(e: CustomEvent) => { this._editedRecord = { ...this._editedRecord!, datetime: dayjs(e.detail.value) } }}
                         ></ha-selector>
                     </div>
 
@@ -276,6 +298,15 @@ export class MedilogRecordDetailDialog extends LitElement {
     }
 
 
+
+    private _applyDateTime(date?: string, time?: string) {
+        if (!this._editedRecord) return;
+
+        const current = this._editedRecord.datetime;
+        const d = date ?? current.format("YYYY-MM-DD");
+        const t = time ?? current.format("HH:mm:ss");
+        this._editedRecord = { ...this._editedRecord, datetime: dayjs(`${d} ${t}`) };
+    }
 
     private setTemperature(t: number, decimals: boolean) {
         let temperature = this._editedRecord?.temperature;
