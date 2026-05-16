@@ -70,9 +70,9 @@ class MedilogRecordsChart extends LitElement {
 
     // Render method
     render() {
-        if (!this._localize) return html``;
         return html`
             <div id="chart"></div>
+            ${this._localize ? html`
             <div class="chart-header">
                 <div class="checkbox-field">
                     <ha-checkbox
@@ -81,13 +81,14 @@ class MedilogRecordsChart extends LitElement {
                     ></ha-checkbox>
                     <label>${this._localize('chart.show_medications')}</label>
                 </div>
-            </div>
-
+            </div>` : ''}
         `;
     }
 
     // Private helper methods
     createChart() {
+        if (!this.chartElement)
+            return;
         if (this.chart)
             this.chart.destroy();
         const records = this.records.filter(record => record!=null);
