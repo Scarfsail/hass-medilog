@@ -14,6 +14,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: true
+          submodules: recursive
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -21,6 +22,9 @@ jobs:
         with:
           python-version: '3.x'
       - run: npm install
+      - run: git submodule update --init frontend/hass-frontend
+      - run: npm --prefix frontend ci
+      - run: npm --prefix frontend run build
       - run: npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

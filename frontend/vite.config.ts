@@ -1,15 +1,13 @@
 import { defineConfig } from "vite";
-//import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
     const isProduction = mode === 'production';
     return {
-       // root: 'src',
         build: {
             lib: {
-                entry: "./src/medilog-card.ts",
+                entry: "./cards/medilog-card.ts",
                 formats: ["es"],
-                fileName: () => `medilog-card-${isProduction ? "prod" : "dev"}.js`, // Update file name
+                fileName: () => "medilog-card.js",
             },
             rollupOptions: {
                 output: {
@@ -18,19 +16,12 @@ export default defineConfig(({ mode }) => {
                 external: []
             },
             emptyOutDir: false,
-            // Relative to the root
-            outDir: './dist',
+            outDir: "../custom_components/medilog/frontend_compiled",
             assetsDir: "compiled",
             sourcemap: !isProduction, // Enable source maps in development mode
             minify: isProduction // Minify only in production mode
         },
-        /*
-        esbuild: {
-            legalComments: "none",
-        },*/
-        plugins: [
-            //react(),
-        ],
+        plugins: [],
         define: {
             "process.env.NODE_ENV": JSON.stringify(isProduction ? "production" : "development"),
         }

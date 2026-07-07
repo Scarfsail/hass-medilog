@@ -6,6 +6,7 @@ from homeassistant.core import HomeAssistant
 
 from . import const
 from .const import DOMAIN
+from .frontend import async_register_frontend, async_unregister_card_resource
 from .services import async_setup_services
 
 _LOGGER = logging.getLogger(__name__)
@@ -23,6 +24,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     # Forward setup for the sensor platform
     await async_setup_services(hass, coordinator)
+    await async_register_frontend(hass)
     _LOGGER.info("MediLog integration has been set up")
     return True
 
@@ -30,7 +32,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 # Optionally, define async_unload_entry if you want to support unloading config entries.
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Unload a config entry."""
-    # Remove any services or clean up resources if needed.
+    await async_unregister_card_resource(hass)
 
     _LOGGER.info("MediLog integration has been unloaded")
 

@@ -2,10 +2,8 @@
   "name": "medilog-card",
   "version": "1.0.0",
   "description": "A health monitoring card for Home Assistant that allows management of medical log for each person.",
-  "main": "dist/medilog-card-prod.js",
   "scripts": {
-    "build-dev": "vite build --mode development",
-    "build-prod": "vite build",
+    "build": "vite build",
     "watch": "vite build --watch --mode development"
   },
   "dependencies": {
@@ -17,41 +15,6 @@
   "devDependencies": {
     "vite": "^7.0.0",
     "typescript": "^5.7.2",
-    "ts-lit-plugin": "2.0.2",
-    "@semantic-release/git": "^10.0.1",
-    "semantic-release": "^25.0.2"
-  },
-  "release": {
-    "branches": [
-      "main"
-    ],
-    "plugins": [
-      [
-        "@semantic-release/commit-analyzer",
-        {
-          "preset": "angular",
-          "releaseRules": [
-            {
-              "type": "chore",
-              "scope": "deps",
-              "release": "patch"
-            }
-          ]
-        }
-      ],
-      "@semantic-release/release-notes-generator",
-      [
-        "@semantic-release/github",
-        {
-          "assets": [
-            {
-              "path": "dist/medilog-card-prod.js",
-              "label": "medilog-card-prod.js"
-            }
-          ]
-        }
-      ],
-      "@semantic-release/git"
-    ]
+    "ts-lit-plugin": "2.0.2"
   }
 }

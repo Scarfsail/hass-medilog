@@ -1,1 +1,5 @@
 **/__pycache__/
+custom_components/medilog/frontend_compiled/
+medilog.zip
+frontend/node_modules/
+frontend/dist/

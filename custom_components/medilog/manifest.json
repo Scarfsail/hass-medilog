@@ -2,7 +2,7 @@
   "domain": "medilog",
   "name": "MediLog",
   "version": "1.0.0",
-  "dependencies": [],
+  "dependencies": ["frontend", "http"],
   "codeowners": [
     "@scarfsail"
   ],
