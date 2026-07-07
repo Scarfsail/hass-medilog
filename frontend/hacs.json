@@ -1,0 +1,9 @@
+
+{
+    "name": "MediLog Card",
+    "render_readme": true,
+    "filename": "medilog-card-prod.js",
+    "version": "1.0.0",
+    "description": "A health monitoring card for Home Assistant that allows management of medical log for each person."
+}
+  
