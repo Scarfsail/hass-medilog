@@ -1,10 +1,10 @@
-import { LitElement, css, html, PropertyValues } from "lit-element"
+import { LitElement, css, html, PropertyValues } from "lit"
 import { customElement, property, state } from "lit/decorators.js";
 import dayjs from "dayjs";
 import duration from 'dayjs/plugin/duration'
 import 'dayjs/locale/cs';
 import { Medication, MedilogRecord, MedilogRecordRaw, MedilogRecordsGroupByTime, PersonInfo } from "./models";
-import type { HomeAssistant } from "../hass-frontend/src/types";
+import type { HomeAssistant } from "../types/ha";
 import { MedilogRecordDetailDialogParams } from "./medilog-record-detail-dialog";
 import { Utils } from "./utils";
 import { getLocalizeFunction, LocalizeFunction } from "./localize/localize";
@@ -102,7 +102,7 @@ export class MedilogRecordsTable extends LitElement {
         }
 
         if (!this.records) {
-            return html`<ha-circular-progress active></ha-circular-progress>`;
+            return html`<ha-spinner></ha-spinner>`;
         }
 
         if (!this.dataStore || !this._localize) {

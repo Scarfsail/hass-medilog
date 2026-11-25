@@ -1,4 +1,4 @@
-import type { HomeAssistant } from "../hass-frontend/src/types";
+import type { HomeAssistant } from "../types/ha";
 import { MedilogRecord, MedilogRecordRaw, MedilogRecordsGroupByTime } from "./models";
 import { Utils } from "./utils";
 import dayjs from "dayjs";
@@ -12,14 +12,14 @@ export class MedilogPersonRecordsStore {
     private _all: MedilogRecord[] = [];
     private _grouped: MedilogRecordsGroupByTime[] = [];
     private _personEntity: string;
-    private _hass: HomeAssistant;
+    private _getHass: () => HomeAssistant;
     private _onRecordsChanged: () => void;
     private _lastRefreshTime?: Date;
     private _isLoading = false;
 
-    constructor(personEntity: string, hass: HomeAssistant, onRecordsChanged: () => void) {
+    constructor(personEntity: string, getHass: () => HomeAssistant, onRecordsChanged: () => void) {
         this._personEntity = personEntity;
-        this._hass = hass;
+        this._getHass = getHass;
         this._onRecordsChanged = onRecordsChanged;
     }
 
@@ -65,7 +65,7 @@ export class MedilogPersonRecordsStore {
         this._isLoading = true;
 
         try {
-            const response = await this._hass.callService('medilog', 'get_records',
+            const response = await this._getHass().callService('medilog', 'get_records',
                 { person_id: this._personEntity },
                 {},
                 true,
@@ -95,7 +95,7 @@ export class MedilogPersonRecordsStore {
      */
     async saveRecord(record: MedilogRecord): Promise<void> {
         try {
-            await this._hass.callService('medilog', 'add_or_update_record', {
+            await this._getHass().callService('medilog', 'add_or_update_record', {
                 id: record.id,
                 datetime: record.datetime.toISOString(),
                 temperature: record.temperature,
@@ -119,7 +119,7 @@ export class MedilogPersonRecordsStore {
      */
     async deleteRecord(recordId: string): Promise<void> {
         try {
-            await this._hass.callService('medilog', 'delete_record', {
+            await this._getHass().callService('medilog', 'delete_record', {
                 person_id: this._personEntity,
                 id: recordId,
             }, {}, true, false);

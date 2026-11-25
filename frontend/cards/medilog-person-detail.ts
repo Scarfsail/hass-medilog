@@ -1,10 +1,10 @@
-import { LitElement, css, html, PropertyValues } from "lit-element"
+import { LitElement, css, html, PropertyValues } from "lit"
 import { customElement, property, state } from "lit/decorators.js";
 import dayjs from "dayjs";
 import duration from 'dayjs/plugin/duration'
 import 'dayjs/locale/cs';
 import { MedilogRecord, MedilogRecordRaw, MedilogRecordsGroupByTime, PersonInfo, PersonInfoRaw, Medication } from "./models";
-import type { HomeAssistant } from "../hass-frontend/src/types";
+import type { HomeAssistant } from "../types/ha";
 import { MedilogRecordDetailDialogParams } from "./medilog-record-detail-dialog";
 import { getLocalizeFunction, LocalizeFunction } from "./localize/localize";
 import "./medilog-records"
@@ -70,12 +70,12 @@ export class MedilogPersonDetail extends LitElement {
             return "Person is not defined";
         }
         if (!this._localize) {
-            return html`<ha-circular-progress active></ha-circular-progress>`;
+            return html`<ha-spinner></ha-spinner>`;
         }
 
         // Show initial loading if no store yet
         if (!this._personStore) {
-            return html`<ha-circular-progress active></ha-circular-progress>`;
+            return html`<ha-spinner></ha-spinner>`;
         }
 
         const { visibleGroups, hasMoreGroups } = this._getVisibleGroups();
@@ -95,7 +95,7 @@ export class MedilogPersonDetail extends LitElement {
                     ${this._localize('actions.add_record')}
                 </ha-button>
                 ${this._personStore.isLoading ? html`
-                    <ha-circular-progress active indeterminate style="--md-circular-progress-size: 24px; margin-left: 8px;"></ha-circular-progress>
+                    <ha-spinner size="small" style="margin-left: 8px;"></ha-spinner>
                 ` : ''}
             </div>
             

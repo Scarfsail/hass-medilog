@@ -1,8 +1,6 @@
-import { LitElement, css, html } from "lit-element"
+import { LitElement, css, html } from "lit"
 import { customElement, state } from "lit/decorators.js";
-import type { HomeAssistant } from "../hass-frontend/src/types";
-import type { LovelaceCard } from "../hass-frontend/src/panels/lovelace/types";
-import type { LovelaceCardConfig } from "../hass-frontend/src/data/lovelace/config/card";
+import type { HomeAssistant, LovelaceCard, LovelaceCardConfig } from "../types/ha";
 import dayjs, { Dayjs } from "dayjs";
 import duration from 'dayjs/plugin/duration'
 import 'dayjs/locale/cs';
@@ -128,15 +126,16 @@ export class MedilogCard extends LitElement implements LovelaceCard {
     @state() person?: PersonInfo;
     @state() private _refreshTrigger = 0;
 
-    // Constructor
-    constructor() {
-        super();
-        dayjs.locale(this._hass?.locale?.language ?? 'cs')
-    }
-
     // HA-specific property setter
     public set hass(value: HomeAssistant) {
+        if (value.locale.language !== this._hass?.locale.language) {
+            dayjs.locale(value.locale.language === 'cs' ? 'cs' : 'en');
+        }
+        const isFirst = !this._hass;
         this._hass = value;
+        if (isFirst && this.isConnected && !this.dataStore) {
+            this._createDataStore();
+        }
     }
 
     // HA-specific methods
@@ -152,14 +151,8 @@ export class MedilogCard extends LitElement implements LovelaceCard {
     connectedCallback() {
         super.connectedCallback();
         
-        if (this._hass) {
-            this.dataStore = new DataStore(this._hass, this.handleDataChanged.bind(this));
-            this.dataStore.initialize().then(() => {
-                // After initialization, select the person with most recent record
-                if (!this.person && this.dataStore) {
-                    this.person = this.dataStore.persons.getPersonWithMostRecentRecord();
-                }
-            });
+        if (this._hass && !this.dataStore) {
+            this._createDataStore();
         }
 
         // Update elapsed times every minute
@@ -183,7 +176,7 @@ export class MedilogCard extends LitElement implements LovelaceCard {
 
 
         if (!this.dataStore) {
-            return html`<ha-card><ha-circular-progress active></ha-circular-progress></ha-card>`;
+            return html`<ha-card><ha-spinner></ha-spinner></ha-card>`;
         }
 
         // Convert persons array to format expected by tabs
@@ -250,6 +243,17 @@ export class MedilogCard extends LitElement implements LovelaceCard {
     }
 
     // Private helper methods
+    private _createDataStore(): void {
+        const dataStore = new DataStore(() => this._hass!, this.handleDataChanged.bind(this));
+        this.dataStore = dataStore;
+        dataStore.initialize().then(() => {
+            // After initialization, select the person with most recent record
+            if (!this.person) {
+                this.person = dataStore.persons.getPersonWithMostRecentRecord();
+            }
+        });
+    }
+
     private handleDataChanged(): void {
         this.requestUpdate();
     }

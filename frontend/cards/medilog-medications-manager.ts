@@ -1,7 +1,7 @@
-import { LitElement, css, html, nothing, PropertyValues } from "lit-element"
+import { LitElement, css, html, nothing, PropertyValues } from "lit"
 import { customElement, property, state } from "lit/decorators.js";
 import { Medication } from "./models";
-import type { HomeAssistant } from "../hass-frontend/src/types";
+import type { HomeAssistant } from "../types/ha";
 import { sharedStyles } from "./shared-styles";
 import { getLocalizeFunction, LocalizeFunction } from "./localize/localize";
 import "./medilog-medication-dialog";

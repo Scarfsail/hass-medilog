@@ -1,4 +1,4 @@
-import type { HomeAssistant } from "../hass-frontend/src/types";
+import type { HomeAssistant } from "../types/ha";
 import { Medication } from "./models";
 
 /**
@@ -10,14 +10,14 @@ import { Medication } from "./models";
 export class MedicationsStore {
     private _medications: Medication[] = [];
     private _medicationsMap: Map<string, Medication> = new Map();
-    private _hass: HomeAssistant;
+    private _getHass: () => HomeAssistant;
     private _onMedicationsChanged: () => void;
     private _lastRefreshTime?: Date;
 
-    constructor(hass: HomeAssistant, onMedicationsChanged: () => void) {
+    constructor(getHass: () => HomeAssistant, onMedicationsChanged: () => void) {
         this._medications = [];
         this._medicationsMap = new Map();
-        this._hass = hass;
+        this._getHass = getHass;
         this._onMedicationsChanged = onMedicationsChanged;
     }
 
@@ -25,10 +25,8 @@ export class MedicationsStore {
      * Fetch medications from the backend and update the store
      */
     async fetch() {
-        if (!this._hass) return;
-
         try {
-            const response = await this._hass.callService('medilog', 'get_medications', {}, {}, true, true);
+            const response = await this._getHass().callService('medilog', 'get_medications', {}, {}, true, true);
             if (response && response.response.medications) {
                 // Update the medications - this preserves the reference
                 this._update(response.response.medications as Medication[]);
@@ -58,7 +56,7 @@ export class MedicationsStore {
                 medicationData.id = medication.id;
             }
 
-            await this._hass.callService(
+            await this._getHass().callService(
                 'medilog',
                 'add_or_update_medication',
                 medicationData,
@@ -80,7 +78,7 @@ export class MedicationsStore {
      */
     async deleteMedication(medicationId: string): Promise<void> {
         try {
-            await this._hass.callService(
+            await this._getHass().callService(
                 'medilog',
                 'delete_medication',
                 { id: medicationId },

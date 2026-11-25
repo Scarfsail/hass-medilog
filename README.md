@@ -57,9 +57,13 @@ Frontend source (TypeScript) lives in `frontend/` and is not shipped to users â€
 into `custom_components/medilog/frontend_compiled/` and bundled into the release zip.
 
 ```bash
-git submodule update --init frontend/hass-frontend
 npm --prefix frontend install
 npm --prefix frontend run build      # or: npm --prefix frontend run watch
+npm --prefix frontend run typecheck
+npm --prefix frontend test           # Playwright; first run: npx --prefix frontend playwright install chromium
+
+python3.14 -m venv .venv && .venv/bin/pip install -r requirements-test.txt
+.venv/bin/pytest tests/
 ```
 
 ## License

@@ -1,8 +1,8 @@
-import { LitElement, css, html, nothing, PropertyValues } from "lit-element"
+import { LitElement, css, html, nothing, PropertyValues } from "lit"
 import { customElement, property, state } from "lit/decorators.js";
 import dayjs from "dayjs";
 import { MedilogRecord, MedilogRecordRaw, Medication } from "./models";
-import type { HomeAssistant } from "../hass-frontend/src/types";
+import type { HomeAssistant } from "../types/ha";
 import { mdiCloseCircle } from '@mdi/js';
 import { sharedStyles } from "./shared-styles";
 import { loadHaForm, loadHaYamlEditor } from "./load-ha-elements";

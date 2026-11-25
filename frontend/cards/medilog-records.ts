@@ -1,8 +1,8 @@
-import { LitElement, css, html, PropertyValues } from "lit-element"
+import { LitElement, css, html, PropertyValues } from "lit"
 import { customElement, property, state } from "lit/decorators.js";
 import 'dayjs/locale/cs';
 import { Medication, MedilogRecord, PersonInfo } from "./models";
-import type { HomeAssistant } from "../hass-frontend/src/types";
+import type { HomeAssistant } from "../types/ha";
 import "./medilog-records-chart"
 import "./medilog-records-table"
 import "./medilog-records-medications"
@@ -42,7 +42,7 @@ export class MedilogRecords extends LitElement {
         }
 
         if (!this.records) {
-            return html`<ha-circular-progress active></ha-circular-progress>`;
+            return html`<ha-spinner></ha-spinner>`;
         }
 
         return html`

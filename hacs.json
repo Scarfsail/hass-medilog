@@ -1,9 +1,7 @@
 {
     "name": "MediLog",
     "render_readme": true,
-    "homeassistant": "2025.1.0",
-    "version": "1.0.0",
-    "description": "A logging application to record health data.",
+    "homeassistant": "2026.11.0",
     "zip_release": true,
     "filename": "medilog.zip"
 }

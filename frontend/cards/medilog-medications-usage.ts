@@ -1,7 +1,7 @@
-import { LitElement, css, html, nothing, PropertyValues } from "lit-element"
+import { LitElement, css, html, nothing, PropertyValues } from "lit"
 import { customElement, property, state } from "lit/decorators.js";
 import { Medication, MedilogRecord, PersonInfo } from "./models";
-import type { HomeAssistant } from "../hass-frontend/src/types";
+import type { HomeAssistant } from "../types/ha";
 import { sharedStyles } from "./shared-styles";
 import { getLocalizeFunction, LocalizeFunction } from "./localize/localize";
 import { DataStore } from "./data-store";
@@ -118,16 +118,15 @@ export class MedilogMedicationsUsage extends LitElement {
                     <ha-select
                         .label=${this._localize('medications_usage.select_medication')}
                         .value=${this._selectedMedicationId || ''}
+                        .options=${[
+                            { value: '', label: '' },
+                            ...medications.map(med => ({
+                                value: med.id,
+                                label: `${med.name}${med.units ? ` (${med.units})` : ''}`,
+                            })),
+                        ]}
                         @selected=${this._handleMedicationSelected}
-                        @closed=${(e: Event) => e.stopPropagation()}
-                    >
-                        <ha-list-item value="">${''}</ha-list-item>
-                        ${medications.map(med => html`
-                            <ha-list-item .value=${med.id}>
-                                ${med.name}${med.units ? ` (${med.units})` : ''}
-                            </ha-list-item>
-                        `)}
-                    </ha-select>
+                    ></ha-select>
                 </div>
 
                 ${this._renderUsageContent()}
@@ -190,9 +189,8 @@ export class MedilogMedicationsUsage extends LitElement {
         return `${person.name} (${count} ${count === 1 ? this._localize('medications_usage.record') : this._localize('medications_usage.records')})`;
     }
 
-    private async _handleMedicationSelected(e: CustomEvent) {
-        const select = e.target as any;
-        const medicationId = select.value;
+    private async _handleMedicationSelected(e: CustomEvent<{ value?: string }>) {
+        const medicationId = e.detail.value;
 
         if (!medicationId) {
             this._selectedMedicationId = undefined;

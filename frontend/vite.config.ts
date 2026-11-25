@@ -9,9 +9,9 @@ export default defineConfig(({ mode }) => {
                 formats: ["es"],
                 fileName: () => "medilog-card.js",
             },
-            rollupOptions: {
+            rolldownOptions: {
                 output: {
-                    inlineDynamicImports: true
+                    codeSplitting: false
                 },
                 external: []
             },

@@ -1,4 +1,4 @@
-import type { HomeAssistant } from "../hass-frontend/src/types";
+import type { HomeAssistant } from "../types/ha";
 import { PersonInfo } from "./models";
 import { MedilogPersonRecordsStore } from "./medilog-person-records-store";
 import { CacheConfig } from "./cache-config";
@@ -12,13 +12,13 @@ import { CacheConfig } from "./cache-config";
  */
 export class MedilogRecords extends EventTarget {
     private _storesByPerson: Map<string, MedilogPersonRecordsStore> = new Map();
-    private _hass: HomeAssistant;
+    private _getHass: () => HomeAssistant;
     private _onRecordsChanged: () => void;
 
-    constructor(hass: HomeAssistant, onRecordsChanged: () => void) {
+    constructor(getHass: () => HomeAssistant, onRecordsChanged: () => void) {
         super();
         this._storesByPerson = new Map();
-        this._hass = hass;
+        this._getHass = getHass;
         this._onRecordsChanged = onRecordsChanged;
     }
 
@@ -38,7 +38,7 @@ export class MedilogRecords extends EventTarget {
                 this._onRecordsChanged();
                 this.dispatchEvent(new CustomEvent('records-changed'));
             };
-            store = new MedilogPersonRecordsStore(person.entity, this._hass, onChanged);
+            store = new MedilogPersonRecordsStore(person.entity, this._getHass, onChanged);
             await store.fetch();
             this._storesByPerson.set(person.entity, store);
         } else {

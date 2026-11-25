@@ -1,8 +1,8 @@
-import { LitElement, css, html, nothing, PropertyValues } from "lit-element"
+import { LitElement, css, html, nothing, PropertyValues } from "lit"
 import { customElement, property, state } from "lit/decorators.js";
 import dayjs from "dayjs";
 import { MedilogRecord, Medication } from "./models";
-import type { HomeAssistant } from "../hass-frontend/src/types";
+import type { HomeAssistant } from "../types/ha";
 import { mdiClose, mdiPencil } from '@mdi/js';
 import { sharedStyles, sharedTableStyles } from "./shared-styles";
 import { getLocalizeFunction, LocalizeFunction } from "./localize/localize";
@@ -149,7 +149,7 @@ export class MedilogMedicationPicker extends LitElement {
         const showAddNew = this._shouldShowAddNew();
 
         return html`
-            <ha-dialog open .heading=${false} @closed=${this._handleClose} @close-dialog=${this._handleClose} @opened=${this._handleOpened}>
+            <ha-dialog open without-header @closed=${this._handleClose} @close-dialog=${this._handleClose} @opened=${this._handleOpened}>
                 <div class="dialog-content">
                     <div class="filter-container">
                         <ha-input

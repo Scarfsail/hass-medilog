@@ -5,7 +5,7 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import { Medication, MedilogRecord } from './models';
 import { MedicationsStore } from './medications-store';
 import { getLocalizeFunction, LocalizeFunction } from './localize/localize';
-import type { HomeAssistant } from '../hass-frontend/src/types';
+import type { HomeAssistant } from '../types/ha';
 
 type ApexCharts = any;
 @customElement("medilog-records-chart")
