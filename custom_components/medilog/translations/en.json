@@ -1,0 +1,161 @@
+{
+  "config": {
+    "abort": {
+      "single_instance_allowed": "MediLog is already configured. Only one instance is supported."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "MediLog options",
+        "description": "Choose the persons whose medical records MediLog keeps.",
+        "data": {
+          "person_list": "Persons"
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "not_loaded": {
+      "message": "MediLog is not loaded."
+    },
+    "unknown_person": {
+      "message": "MediLog does not track person {person_id}. Add the person in the MediLog options."
+    },
+    "unknown_medication": {
+      "message": "Medication {medication_id} does not exist. Create the medication first."
+    },
+    "record_not_found": {
+      "message": "Record {record_id} was not found."
+    },
+    "medication_not_found": {
+      "message": "Medication {medication_id} was not found."
+    },
+    "duplicate_medication_name": {
+      "message": "A medication named {name} already exists."
+    },
+    "medication_in_use": {
+      "message": "The medication cannot be deleted because {count} records use it."
+    },
+    "save_failed": {
+      "message": "Saving {file} failed: {error}"
+    },
+    "corrupt_file": {
+      "message": "{file} is not valid JSON. Restore it from the newest backup: {backup}"
+    }
+  },
+  "services": {
+    "add_or_update_record": {
+      "name": "Add or update record",
+      "description": "Adds a new record for a person, or updates the record with the given ID.",
+      "fields": {
+        "person_id": {
+          "name": "Person",
+          "description": "The person the record belongs to."
+        },
+        "id": {
+          "name": "Record ID",
+          "description": "ID of the record to update. Leave empty to add a new record."
+        },
+        "datetime": {
+          "name": "Date and time",
+          "description": "When the measurement was taken or the medication given."
+        },
+        "temperature": {
+          "name": "Temperature",
+          "description": "Measured body temperature."
+        },
+        "medication_id": {
+          "name": "Medication ID",
+          "description": "ID of a medication from the medication database."
+        },
+        "medication_amount": {
+          "name": "Medication amount",
+          "description": "Amount of the medication given. Defaults to 1."
+        },
+        "note": {
+          "name": "Note",
+          "description": "Free-text note."
+        }
+      }
+    },
+    "delete_record": {
+      "name": "Delete record",
+      "description": "Deletes a record of a person by its ID.",
+      "fields": {
+        "person_id": {
+          "name": "Person",
+          "description": "The person the record belongs to."
+        },
+        "id": {
+          "name": "Record ID",
+          "description": "ID of the record to delete."
+        }
+      }
+    },
+    "get_records": {
+      "name": "Get records",
+      "description": "Returns all records of a person.",
+      "fields": {
+        "person_id": {
+          "name": "Person",
+          "description": "The person whose records to return."
+        }
+      }
+    },
+    "get_person_list": {
+      "name": "Get person list",
+      "description": "Returns the persons tracked by MediLog with their most recent record."
+    },
+    "add_or_update_medication": {
+      "name": "Add or update medication",
+      "description": "Adds a new medication to the medication database, or updates the medication with the given ID.",
+      "fields": {
+        "id": {
+          "name": "Medication ID",
+          "description": "ID of the medication to update. Leave empty to add a new medication."
+        },
+        "name": {
+          "name": "Name",
+          "description": "Name of the medication. Must be unique."
+        },
+        "units": {
+          "name": "Units",
+          "description": "Units of the medication amount, e.g. tablets, ml or sprays."
+        },
+        "is_antipyretic": {
+          "name": "Antipyretic",
+          "description": "Whether the medication reduces fever."
+        },
+        "active_ingredient": {
+          "name": "Active ingredient",
+          "description": "Active ingredient of the medication."
+        }
+      }
+    },
+    "delete_medication": {
+      "name": "Delete medication",
+      "description": "Deletes a medication from the database. A medication used by any record cannot be deleted.",
+      "fields": {
+        "id": {
+          "name": "Medication ID",
+          "description": "ID of the medication to delete."
+        }
+      }
+    },
+    "get_medications": {
+      "name": "Get medications",
+      "description": "Returns all medications from the medication database."
+    },
+    "get_medication": {
+      "name": "Get medication",
+      "description": "Returns one medication by its ID.",
+      "fields": {
+        "id": {
+          "name": "Medication ID",
+          "description": "ID of the medication to return."
+        }
+      }
+    }
+  }
+}

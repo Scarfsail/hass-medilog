@@ -1,4 +1,4 @@
-import type { HomeAssistant } from "../hass-frontend/src/types";
+import type { HomeAssistant } from "../types/ha";
 import { PersonInfo } from "./models";
 import { MedilogPersonRecordsStore } from "./medilog-person-records-store";
 import { CacheConfig } from "./cache-config";
@@ -12,13 +12,14 @@ import { CacheConfig } from "./cache-config";
  */
 export class MedilogRecords extends EventTarget {
     private _storesByPerson: Map<string, MedilogPersonRecordsStore> = new Map();
-    private _hass: HomeAssistant;
+    private _firstFetchByPerson: Map<string, Promise<MedilogPersonRecordsStore>> = new Map();
+    private _getHass: () => HomeAssistant;
     private _onRecordsChanged: () => void;
 
-    constructor(hass: HomeAssistant, onRecordsChanged: () => void) {
+    constructor(getHass: () => HomeAssistant, onRecordsChanged: () => void) {
         super();
         this._storesByPerson = new Map();
-        this._hass = hass;
+        this._getHass = getHass;
         this._onRecordsChanged = onRecordsChanged;
     }
 
@@ -29,26 +30,31 @@ export class MedilogRecords extends EventTarget {
      * Always returns a store (either freshly created or existing).
      */
     async getStoreForPerson(person: PersonInfo, forceRefresh: boolean = false): Promise<MedilogPersonRecordsStore> {
-        // If store exists, check if it has data
-        let store = this._storesByPerson.get(person.entity);
-        
-        if (!store) {
+        const store = this._storesByPerson.get(person.entity);
+        if (store) {
+            if (CacheConfig.shouldRefresh(store.lastRefreshTime, forceRefresh)) {
+                await store.fetch();
+            }
+            return store;
+        }
+
+        // Callers arriving while the first fetch is in flight share it, and with it one store
+        let firstFetch = this._firstFetchByPerson.get(person.entity);
+        if (!firstFetch) {
             // Create new store with callback that triggers both the main callback and event dispatch
             const onChanged = () => {
                 this._onRecordsChanged();
                 this.dispatchEvent(new CustomEvent('records-changed'));
             };
-            store = new MedilogPersonRecordsStore(person.entity, this._hass, onChanged);
-            await store.fetch();
-            this._storesByPerson.set(person.entity, store);
-        } else {
-            // Check if data should be refreshed
-            if (CacheConfig.shouldRefresh(store.lastRefreshTime, forceRefresh)) {
-                await store.fetch();
-            }
+            const newStore = new MedilogPersonRecordsStore(person.entity, this._getHass, onChanged);
+            firstFetch = newStore.fetch().then(() => {
+                this._storesByPerson.set(person.entity, newStore);
+                this._firstFetchByPerson.delete(person.entity);
+                return newStore;
+            });
+            this._firstFetchByPerson.set(person.entity, firstFetch);
         }
-                
-        return store;
+        return firstFetch;
     }
 
     /**

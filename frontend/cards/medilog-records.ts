@@ -1,13 +1,14 @@
-import { LitElement, css, html, PropertyValues } from "lit-element"
+import { LitElement, css, html, PropertyValues } from "lit"
 import { customElement, property, state } from "lit/decorators.js";
 import 'dayjs/locale/cs';
 import { Medication, MedilogRecord, PersonInfo } from "./models";
-import type { HomeAssistant } from "../hass-frontend/src/types";
+import type { HomeAssistant } from "../types/ha";
 import "./medilog-records-chart"
 import "./medilog-records-table"
 import "./medilog-records-medications"
 import { getLocalizeFunction, LocalizeFunction } from "./localize/localize";
 import { DataStore } from "./data-store";
+import { mdiChartLine, mdiTable } from "@mdi/js";
 
 @customElement("medilog-records")
 export class MedilogRecords extends LitElement {
@@ -24,6 +25,7 @@ export class MedilogRecords extends LitElement {
     @property({ attribute: false }) public hass?: HomeAssistant;
     @property({ attribute: false }) public records?: (MedilogRecord | null)[];
     @property({ attribute: false }) public dataStore!: DataStore;
+    @property({ attribute: false }) public now?: number;
 
     // State properties
     @state() private visualization: 'chart' | 'table' = 'table';
@@ -41,20 +43,24 @@ export class MedilogRecords extends LitElement {
             return "Person is not defined";
         }
 
-        if (!this.records) {
-            return html`<ha-circular-progress active></ha-circular-progress>`;
+        if (!this.records || !this._localize) {
+            return html`<ha-spinner></ha-spinner>`;
         }
 
         return html`
-            <div>
-                <ha-button .appearance=${this.visualization == 'table' ? 'accent' : 'plain'} @click=${() => this.visualization = 'table'}><ha-icon icon="mdi:table"></ha-icon></ha-button>            
-                <ha-button .appearance=${this.visualization == 'chart' ? 'accent' : 'plain'} @click=${() => this.visualization = 'chart'}><ha-icon icon="mdi:chart-line"></ha-icon></ha-button>
-            </div>
+            <ha-button-toggle-group
+                .buttons=${[
+                    { label: this._localize('common.table'), iconPath: mdiTable, value: 'table' },
+                    { label: this._localize('common.chart'), iconPath: mdiChartLine, value: 'chart' },
+                ]}
+                .active=${this.visualization}
+                @value-changed=${(e: CustomEvent<{ value: 'chart' | 'table' }>) => this.visualization = e.detail.value}
+            ></ha-button-toggle-group>
             
             ${this.visualization === 'table'
-                ? html`<medilog-records-table .records=${this.records} .hass=${this.hass} .person=${this.person} .dataStore=${this.dataStore}></medilog-records-table>`
+                ? html`<medilog-records-table .records=${this.records} .hass=${this.hass} .person=${this.person} .dataStore=${this.dataStore} .now=${this.now}></medilog-records-table>`
                 : this.visualization === 'chart'
-                    ? html`<medilog-records-chart .records=${this.records} .medications=${this.dataStore.medications}></medilog-records-chart>`
+                    ? html`<medilog-records-chart .records=${this.records} .medications=${this.dataStore.medications} .hass=${this.hass}></medilog-records-chart>`
                     : html`<div>Unknown visualization: ${this.visualization}</div>`
             }
         `;

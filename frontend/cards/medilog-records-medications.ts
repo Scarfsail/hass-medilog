@@ -1,8 +1,8 @@
-import { LitElement, css, html, PropertyValues } from "lit-element"
+import { LitElement, css, html, PropertyValues } from "lit"
 import { customElement, property, state } from "lit/decorators.js";
 import dayjs from "dayjs";
 import { Medication, MedilogRecord, PersonInfo } from "./models";
-import type { HomeAssistant } from "../hass-frontend/src/types";
+import type { HomeAssistant } from "../types/ha";
 import { getLocalizeFunction, LocalizeFunction } from "./localize/localize";
 import "./medilog-records-table";
 import { DataStore } from "./data-store";
@@ -202,6 +202,7 @@ export class MedilogRecordsMedications extends LitElement {
     @property({ attribute: false }) public hass?: HomeAssistant;
     @property({ attribute: false }) public records?: (MedilogRecord | null)[];
     @property({ attribute: false }) public dataStore!: DataStore;
+    @property({ attribute: false }) public now?: number;
 
     // State properties
     @state() private drillDownState: DrillDownState = { level: 'year' };
@@ -240,7 +241,7 @@ export class MedilogRecordsMedications extends LitElement {
         }
 
         if (!this.records) {
-            return html`<ha-circular-progress active></ha-circular-progress>`;
+            return html`<ha-spinner></ha-spinner>`;
         }
 
         const filteredRecords = this.records.filter(r => r !== null) as MedilogRecord[];
@@ -309,6 +310,7 @@ export class MedilogRecordsMedications extends LitElement {
                             .hass=${this.hass} 
                             .person=${this.person}
                             .dataStore=${this.dataStore}
+                            .now=${this.now}
                         ></medilog-records-table>
                     </div>
                 ` : ''}

@@ -1,5 +1,5 @@
 import * as cs from './translations/cs.json';
-import type { HomeAssistant } from '../../hass-frontend/src/types';
+import type { HomeAssistant } from '../../types/ha';
 
 const languages: Record<string, any> = {
     cs: cs,

@@ -4,17 +4,23 @@
   "description": "A health monitoring card for Home Assistant that allows management of medical log for each person.",
   "scripts": {
     "build": "vite build",
-    "watch": "vite build --watch --mode development"
+    "typecheck": "tsc -p . --noEmit && tsc -p tsconfig.test.json --noEmit",
+    "watch": "vite build --watch --mode development",
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:report": "playwright show-report"
   },
   "dependencies": {
-    "lit": "3.3.1",
-    "dayjs": "1.11.19",
+    "lit": "3.3.3",
+    "dayjs": "1.11.23",
     "@mdi/js": "^7.4.47",
-    "home-assistant-js-websocket": "9.5.0"
+    "home-assistant-js-websocket": "9.9.0"
   },
   "devDependencies": {
-    "vite": "^7.0.0",
-    "typescript": "^5.7.2",
-    "ts-lit-plugin": "2.0.2"
+    "@playwright/test": "^1.65.1",
+    "@types/node": "^26.6.10",
+    "ts-lit-plugin": "2.0.2",
+    "typescript": "6.0.3",
+    "vite": "^8.3.8"
   }
 }

@@ -1,14 +1,22 @@
 {
   "domain": "medilog",
   "name": "MediLog",
-  "version": "2.0.0",
-  "dependencies": [
-    "frontend",
-    "http"
+  "after_dependencies": [
+    "lovelace"
   ],
   "codeowners": [
     "@scarfsail"
   ],
+  "config_flow": true,
+  "dependencies": [
+    "frontend",
+    "http"
+  ],
+  "documentation": "https://github.com/Scarfsail/hass-medilog",
+  "integration_type": "service",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/Scarfsail/hass-medilog/issues",
   "requirements": [],
-  "config_flow": true
+  "single_config_entry": true,
+  "version": "2.0.0"
 }

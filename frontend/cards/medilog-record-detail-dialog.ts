@@ -1,11 +1,11 @@
-import { LitElement, css, html, nothing, PropertyValues } from "lit-element"
+import { LitElement, css, html, nothing, PropertyValues } from "lit"
 import { customElement, property, state } from "lit/decorators.js";
 import dayjs from "dayjs";
 import { MedilogRecord, MedilogRecordRaw, Medication } from "./models";
-import type { HomeAssistant } from "../hass-frontend/src/types";
+import type { HomeAssistant } from "../types/ha";
 import { mdiCloseCircle } from '@mdi/js';
 import { sharedStyles } from "./shared-styles";
-import { loadHaForm, loadHaYamlEditor } from "./load-ha-elements";
+import { loadHaForm } from "./load-ha-elements";
 import { getLocalizeFunction, LocalizeFunction } from "./localize/localize";
 import { Utils } from "./utils";
 import "./medilog-medication-dialog";
@@ -13,14 +13,16 @@ import { MedicationsStore } from "./medications-store";
 import { showMedicationDialog } from "./medilog-medications-manager";
 import { showMedicationPicker } from "./medilog-medication-picker";
 import { MedilogPersonRecordsStore } from "./medilog-person-records-store";
+import { showConfirmDialog } from "./medilog-confirm-dialog";
+
+const WHOLE_DEGREES = [36, 37, 38, 39, 40];
+const TENTHS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
 export interface MedilogRecordDetailDialogParams {
     record: MedilogRecord;
     personStore: MedilogPersonRecordsStore;
     medications: MedicationsStore;
 }
-
-loadHaForm();
 
 @customElement("medilog-record-detail-dialog")
 export class MedilogRecordDetailDialog extends LitElement {
@@ -60,18 +62,17 @@ export class MedilogRecordDetailDialog extends LitElement {
             position: absolute;
             right: 8px;
             bottom: 8px;
-            --mdc-icon-button-size: 24px;
+            --ha-icon-button-size: 24px;
             --mdc-icon-size: 18px;
         }
         .medication-row .amount-field {
             width: 120px;
         }
-        .temperature-buttons{
+        .temperature-buttons {
             display: flex;
-            justify-content: space-between;
-            gap:5px;
-            width: 280px;
-            flex-wrap: wrap;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
         }
         .wrapper{
             display: flex;   
@@ -100,7 +101,8 @@ export class MedilogRecordDetailDialog extends LitElement {
     @state() private _editedRecord?: MedilogRecord;
 
     // Public methods
-    public showDialog(dialogParams: MedilogRecordDetailDialogParams): void {
+    public async showDialog(dialogParams: MedilogRecordDetailDialogParams): Promise<void> {
+        await loadHaForm().catch(console.error);
         this._params = dialogParams;
         this._editedRecord = dialogParams.record;
     }
@@ -181,19 +183,15 @@ export class MedilogRecordDetailDialog extends LitElement {
                     </div>
                     <ha-input .label=${this._localize('dialog.notes')} .value=${this._editedRecord.note ?? ""} class="fill field" @change=${(e: Event) => { this._editedRecord = { ...this._editedRecord!, note: (e.target as HTMLTextAreaElement).value }; }}></ha-input>
                     ${this._editedRecord.temperature !== undefined ? html`
-                        <p >
+                        <p class="temperature-value">
                             <strong>${this._localize('dialog.temperature')}:</strong> ${this._editedRecord.temperature}
-                            <ha-button .variant=${"danger"} @click=${() => this._editedRecord = { ...this._editedRecord!, temperature: undefined }}>X</ha-button>
+                            <ha-button appearance="plain" @click=${() => this._editedRecord = { ...this._editedRecord!, temperature: undefined }}>
+                                ${this._localize('common.clear')}
+                            </ha-button>
                         </p>
-                        <div>
-                            <div class="temperature-buttons">
-                                ${[36, 37, 38, 39, 40].map((t) => html`
-                                <ha-button .appearance=${this.doesTemperatureMatch(t, false) ? 'accent' : 'plain'} @click=${() => this.setTemperature(t, false)}>${t}</ha-button>`)}
-                            </div>
-                            <div class="temperature-buttons">
-                                ${[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((t) => html`
-                                <ha-button .appearance=${this.doesTemperatureMatch(t, true) ? 'accent' : 'plain'}  @click=${() => this.setTemperature(t, true)}>${"." + t}</ha-button>`)}
-                            </div>
+                        <div class="temperature-buttons">
+                            ${this._renderTemperatureGroup(WHOLE_DEGREES, false)}
+                            ${this._renderTemperatureGroup(TENTHS, true)}
                         </div>
                     ` : html`
                         <p class="temperature-value">
@@ -204,31 +202,35 @@ export class MedilogRecordDetailDialog extends LitElement {
 
                 </div>
 
-                <div slot="footer" class="dialog-footer">
+                <ha-dialog-footer slot="footer">
                     ${this._editedRecord.id ? html`
-                        <div class="dialog-footer__secondary">
-                            <ha-button variant="danger" @click=${this.deleteClick}>
-                                ${this._localize('common.delete')}
-                            </ha-button>
-
-                            <ha-button appearance="plain" @click=${this.duplicateClick}>
-                                ${this._localize('common.duplicate')}
-                            </ha-button>
-                        </div>
-                    ` : nothing}
-
-                    <div class="dialog-footer__primary">
-                        <ha-button appearance="accent" @click=${this.saveClick}>
-                            ${this._localize('common.save')}
+                        <ha-button slot="secondaryAction" variant="danger" @click=${this.deleteClick}>
+                            ${this._localize('common.delete')}
                         </ha-button>
-                    </div>
-                </div>
+                        <ha-button slot="secondaryAction" appearance="plain" @click=${this.duplicateClick}>
+                            ${this._localize('common.duplicate')}
+                        </ha-button>
+                    ` : nothing}
+                    <ha-button slot="primaryAction" appearance="accent" @click=${this.saveClick}>
+                        ${this._localize('common.save')}
+                    </ha-button>
+                </ha-dialog-footer>
             </ha-dialog>
         `;
 
     }
 
     // Private helper methods
+    private _renderTemperatureGroup(values: number[], decimals: boolean) {
+        return html`
+            <ha-button-toggle-group
+                .buttons=${values.map((t) => ({ label: decimals ? `.${t}` : `${t}`, value: `${t}` }))}
+                .active=${values.find((t) => this.doesTemperatureMatch(t, decimals))?.toString()}
+                @value-changed=${(e: CustomEvent<{ value: string }>) => this.setTemperature(+e.detail.value, decimals)}
+            ></ha-button-toggle-group>
+        `;
+    }
+
     private _getMedicationName(): string {
         if (!this._editedRecord?.medication_id) {
             return '';
@@ -351,16 +353,33 @@ export class MedilogRecordDetailDialog extends LitElement {
         if (!this._editedRecord || !this._params || !this._editedRecord.id || !this._localize)
             return;
 
-        if (!confirm(this._localize('dialog.delete_confirm'))) {
+        const confirmed = await showConfirmDialog(this, {
+            title: this._localize('dialog.delete_confirm'),
+            details: this._describeRecord(this._params.record),
+        });
+        if (!confirmed) {
             return;
         }
-        
+
         try {
             await this._params.personStore.deleteRecord(this._editedRecord.id);
             this.closeDialog();
         } catch (error) {
             console.error("Error deleting record:", error);
         }
+    }
+
+    /** The stored record, the one a delete removes: its time, temperature and medication. */
+    private _describeRecord(record: MedilogRecord): string[] {
+        const details = [record.datetime.format("D. M. YYYY H:mm")];
+        if (record.temperature !== undefined) {
+            details.push(`${this._localize!('dialog.temperature')}: ${record.temperature} °C`);
+        }
+        if (record.medication_id) {
+            const amount = record.medication_amount && record.medication_amount > 1 ? ` (${record.medication_amount}x)` : '';
+            details.push(`${this._localize!('dialog.medication')}: ${this._params!.medications.getMedicationName(record.medication_id)}${amount}`);
+        }
+        return details;
     }
 
     private closeDialog() {

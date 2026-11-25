@@ -1,68 +1,44 @@
 """Storage management for Medication database in Medilog component."""
 
-import asyncio
-import contextlib
-import datetime
-import json
+import copy
 from pathlib import Path
-import shutil
 import uuid
+
+from . import json_file
 
 
 class MedicationStorage:
     """Storage class for managing Medication database."""
 
-    def __init__(self, file_path: str, on_change_callback=None) -> None:
+    def __init__(self, file_path: Path) -> None:
         """Initialize Medication storage.
 
         Args:
             file_path: Path to the medications storage file
-            on_change_callback: Optional callback function when data changes
 
         """
-        self.file_path = Path(file_path)
-        self.on_change_callback = on_change_callback
+        self.file_path = file_path
         self.data = {"medications": []}
+        # The data as last loaded or saved; a failed save restores it.
+        self._saved = copy.deepcopy(self.data)
 
     async def async_load(self) -> None:
         """Load medications from storage file."""
-        if self.file_path.exists():
-            try:
-                # Use asyncio.to_thread for file operations to avoid blocking
-                def load_data():
-                    with self.file_path.open(encoding="utf-8") as f:
-                        return json.load(f)
-
-                loaded_data = await asyncio.to_thread(load_data)
-                # Validate structure
-                if isinstance(loaded_data, dict) and "medications" in loaded_data:
-                    self.data = loaded_data
-            except (json.JSONDecodeError, FileNotFoundError):
-                self.data = {"medications": []}
-        else:
-            self.data = {"medications": []}
+        loaded_data = await json_file.async_load(self.file_path)
+        # Validate structure
+        if isinstance(loaded_data, dict) and "medications" in loaded_data:
+            self.data = loaded_data
+            self._saved = copy.deepcopy(loaded_data)
 
     async def async_save(self) -> None:
         """Save medications to storage file with backup."""
-        # First, create a backup of the existing file if it exists
-        if self.file_path.exists():
-            backup_suffix = datetime.datetime.now().isoformat().replace(":", "-")
-            backup_path = Path(f"{self.file_path}.{backup_suffix}")
-            # Use contextlib.suppress for backup failure
-            with contextlib.suppress(OSError):
-                await asyncio.to_thread(shutil.copy2, self.file_path, backup_path)
-
-        # Then save the current data using asyncio.to_thread
-        def save_data():
-            # Ensure parent directory exists
-            self.file_path.parent.mkdir(parents=True, exist_ok=True)
-            with self.file_path.open("w", encoding="utf-8") as f:
-                json.dump(self.data, f, indent=2)
-
-        await asyncio.to_thread(save_data)
-
-        if self.on_change_callback:
-            self.on_change_callback()
+        try:
+            await json_file.async_save(self.file_path, self.data)
+        except Exception:
+            # Drop the unsaved change, so it is neither returned nor saved later.
+            self.data = copy.deepcopy(self._saved)
+            raise
+        self._saved = copy.deepcopy(self.data)
 
     def get_medications(self) -> list:
         """Get all medications.
@@ -182,25 +158,16 @@ class MedicationStorage:
 
         return result
 
-    async def async_delete_medication(
-        self, medication_id: str, check_usage_callback=None
-    ) -> None:
+    async def async_delete_medication(self, medication_id: str) -> None:
         """Delete a medication by ID.
 
         Args:
             medication_id: ID of the medication to delete
-            check_usage_callback: Optional callback to check if medication is in use
 
         Raises:
-            ValueError: If medication not found or is in use
+            ValueError: If medication not found
 
         """
-        # Check if medication is in use
-        if check_usage_callback and check_usage_callback(medication_id):
-            raise ValueError(
-                f"Cannot delete medication with ID '{medication_id}' because it is referenced by one or more records."
-            )
-
         original_count = len(self.data["medications"])
         self.data["medications"] = [
             med for med in self.data["medications"] if med.get("id") != medication_id

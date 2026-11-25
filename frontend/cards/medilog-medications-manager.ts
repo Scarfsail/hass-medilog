@@ -1,13 +1,14 @@
-import { LitElement, css, html, nothing, PropertyValues } from "lit-element"
+import { LitElement, css, html, nothing, PropertyValues } from "lit"
 import { customElement, property, state } from "lit/decorators.js";
 import { Medication } from "./models";
-import type { HomeAssistant } from "../hass-frontend/src/types";
+import type { HomeAssistant } from "../types/ha";
 import { sharedStyles } from "./shared-styles";
 import { getLocalizeFunction, LocalizeFunction } from "./localize/localize";
 import "./medilog-medication-dialog";
 import "./medilog-medications-table";
 import "./medilog-medications-usage";
 import { DataStore } from "./data-store";
+import { mdiChartBox, mdiFormatListBulleted } from "@mdi/js";
 
 @customElement("medilog-medications-manager")
 export class MedilogMedicationsManager extends LitElement {
@@ -52,14 +53,14 @@ export class MedilogMedicationsManager extends LitElement {
         return html`
             <div class="container">
                 <div class="controls">
-                    <div class="view-toggle">
-                        <ha-button .appearance=${this.viewMode === 'list' ? 'accent' : 'plain'} @click=${() => this.viewMode = 'list'}>
-                            <ha-icon icon="mdi:format-list-bulleted"></ha-icon>
-                        </ha-button>
-                        <ha-button .appearance=${this.viewMode === 'usage' ? 'accent' : 'plain'} @click=${() => this.viewMode = 'usage'}>
-                            <ha-icon icon="mdi:chart-box"></ha-icon>
-                        </ha-button>
-                    </div>
+                    <ha-button-toggle-group
+                        .buttons=${[
+                            { label: this._localize('views.list'), iconPath: mdiFormatListBulleted, value: 'list' },
+                            { label: this._localize('views.usage'), iconPath: mdiChartBox, value: 'usage' },
+                        ]}
+                        .active=${this.viewMode}
+                        @value-changed=${(e: CustomEvent<{ value: 'list' | 'usage' }>) => this.viewMode = e.detail.value}
+                    ></ha-button-toggle-group>
                     <ha-button @click=${this._handleAdd} .appearance=${'plain'}>
                         <ha-icon icon="mdi:plus"></ha-icon>
                         ${this._localize('actions.add_record')}

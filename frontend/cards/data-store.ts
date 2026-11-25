@@ -1,4 +1,4 @@
-import type { HomeAssistant } from "../hass-frontend/src/types";
+import type { HomeAssistant } from "../types/ha";
 import { MedicationsStore } from "./medications-store";
 import { PersonsInfo } from "./persons-info";
 import { MedilogRecords } from "./medilog-records-store";
@@ -17,17 +17,15 @@ export class DataStore {
     public persons: PersonsInfo;
     public records: MedilogRecords;
 
-    private _hass: HomeAssistant;
     private _onDataChanged: () => void;
 
-    constructor(hass: HomeAssistant, onDataChanged: () => void) {
-        this._hass = hass;
+    constructor(getHass: () => HomeAssistant, onDataChanged: () => void) {
         this._onDataChanged = onDataChanged;
 
         // Initialize all storage classes
-        this.medications = new MedicationsStore(hass, this._onDataChanged);
-        this.persons = new PersonsInfo(hass, this._onDataChanged);
-        this.records = new MedilogRecords(hass, this._onDataChanged);
+        this.medications = new MedicationsStore(getHass, this._onDataChanged);
+        this.persons = new PersonsInfo(getHass, this._onDataChanged);
+        this.records = new MedilogRecords(getHass, this._onDataChanged);
     }
 
     /**

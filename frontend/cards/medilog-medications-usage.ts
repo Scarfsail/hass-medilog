@@ -1,10 +1,11 @@
-import { LitElement, css, html, nothing, PropertyValues } from "lit-element"
+import { LitElement, css, html, nothing, PropertyValues } from "lit"
 import { customElement, property, state } from "lit/decorators.js";
 import { Medication, MedilogRecord, PersonInfo } from "./models";
-import type { HomeAssistant } from "../hass-frontend/src/types";
+import type { HomeAssistant } from "../types/ha";
 import { sharedStyles } from "./shared-styles";
 import { getLocalizeFunction, LocalizeFunction } from "./localize/localize";
 import { DataStore } from "./data-store";
+import type { MedilogPersonRecordsStore } from "./medilog-person-records-store";
 import "./medilog-records-table";
 
 @customElement("medilog-medications-usage")
@@ -118,16 +119,15 @@ export class MedilogMedicationsUsage extends LitElement {
                     <ha-select
                         .label=${this._localize('medications_usage.select_medication')}
                         .value=${this._selectedMedicationId || ''}
+                        .options=${[
+                            { value: '', label: '' },
+                            ...medications.map(med => ({
+                                value: med.id,
+                                label: `${med.name}${med.units ? ` (${med.units})` : ''}`,
+                            })),
+                        ]}
                         @selected=${this._handleMedicationSelected}
-                        @closed=${(e: Event) => e.stopPropagation()}
-                    >
-                        <ha-list-item value="">${''}</ha-list-item>
-                        ${medications.map(med => html`
-                            <ha-list-item .value=${med.id}>
-                                ${med.name}${med.units ? ` (${med.units})` : ''}
-                            </ha-list-item>
-                        `)}
-                    </ha-select>
+                    ></ha-select>
                 </div>
 
                 ${this._renderUsageContent()}
@@ -190,9 +190,8 @@ export class MedilogMedicationsUsage extends LitElement {
         return `${person.name} (${count} ${count === 1 ? this._localize('medications_usage.record') : this._localize('medications_usage.records')})`;
     }
 
-    private async _handleMedicationSelected(e: CustomEvent) {
-        const select = e.target as any;
-        const medicationId = select.value;
+    private async _handleMedicationSelected(e: CustomEvent<{ value?: string }>) {
+        const medicationId = e.detail.value;
 
         if (!medicationId) {
             this._selectedMedicationId = undefined;
@@ -204,26 +203,32 @@ export class MedilogMedicationsUsage extends LitElement {
         await this._loadUsageData(medicationId);
     }
 
-    private async _loadUsageData(medicationId: string): Promise<void> {
+    /**
+     * With `cachedOnly`, re-read the stores already loaded instead of fetching:
+     * a store reports `records-changed` after every fetch, failed ones too, so
+     * fetching in response would loop while `get_records` keeps failing.
+     */
+    private async _loadUsageData(medicationId: string, cachedOnly = false): Promise<void> {
         if (!this.dataStore?.records || !this.dataStore?.persons) {
             return;
         }
 
         const personUsageData = new Map<string, MedilogRecord[]>();
 
-        // Iterate through all persons and collect records with the selected medication
-        for (const person of this.dataStore.persons.all) {
-            try {
-                const personStore = await this.dataStore.records.getStoreForPerson(person);
-                const medicationRecords = personStore.all
-                    .filter(record => record.medication_id === medicationId)
-                    .sort((a, b) => b.datetime.valueOf() - a.datetime.valueOf()); // Sort descending (newest first)
+        const personStores = cachedOnly
+            ? this.dataStore.persons.all
+                .map(person => this.dataStore.records.getCachedStore(person.entity))
+                .filter((store): store is MedilogPersonRecordsStore => store !== undefined)
+            : await Promise.all(
+                this.dataStore.persons.all.map(person => this.dataStore.records.getStoreForPerson(person))
+            );
+        for (const personStore of personStores) {
+            const medicationRecords = personStore.all
+                .filter(record => record.medication_id === medicationId)
+                .sort((a, b) => b.datetime.valueOf() - a.datetime.valueOf()); // Sort descending (newest first)
 
-                if (medicationRecords.length > 0) {
-                    personUsageData.set(person.entity, medicationRecords);
-                }
-            } catch (error) {
-                console.error(`Error loading records for person ${person.entity}:`, error);
+            if (medicationRecords.length > 0) {
+                personUsageData.set(personStore.personEntity, medicationRecords);
             }
         }
 
@@ -233,7 +238,7 @@ export class MedilogMedicationsUsage extends LitElement {
     private async _handleRecordsChanged(): Promise<void> {
         // Reload data for the currently selected medication
         if (this._selectedMedicationId) {
-            await this._loadUsageData(this._selectedMedicationId);
+            await this._loadUsageData(this._selectedMedicationId, true);
         }
     }
 }

@@ -1,67 +1,45 @@
 """Storage management for Medilog custom component."""
 
-import asyncio
-import contextlib
-import datetime
-import json
+import copy
 from pathlib import Path
-import shutil
 import uuid
+
+from . import json_file
 
 
 class MedilogStorage:
     """Storage class for managing Medilog records."""
 
-    def __init__(self, entity: str, file_path: str, on_change_callback=None) -> None:
+    def __init__(self, entity: str, file_path: Path) -> None:
         """Initialize Medilog storage.
 
         Args:
             entity: Entity identifier
             file_path: Path to the storage file
-            on_change_callback: Optional callback function when data changes
 
         """
         self.entity = entity
-        self.file_path = Path(file_path)
-        self.on_change_callback = on_change_callback
+        self.file_path = file_path
         self.data = {"entity": self.entity, "records": []}
+        # The data as last loaded or saved; a failed save restores it.
+        self._saved = copy.deepcopy(self.data)
 
     async def async_load(self) -> None:
         """Load records from storage file."""
-        if self.file_path.exists():
-            try:
-                # Use asyncio.to_thread for file operations to avoid blocking
-                def load_data():
-                    with self.file_path.open(encoding="utf-8") as f:
-                        return json.load(f)
-
-                loaded_data = await asyncio.to_thread(load_data)
-                if loaded_data.get("entity") == self.entity:
-                    self.data = loaded_data
-            except (json.JSONDecodeError, FileNotFoundError):
-                self.data = {"entity": self.entity, "records": []}
-        else:
-            self.data = {"entity": self.entity, "records": []}
+        loaded_data = await json_file.async_load(self.file_path)
+        if loaded_data is not None and loaded_data.get("entity") == self.entity:
+            self.data = loaded_data
+            self._saved = copy.deepcopy(loaded_data)
 
     async def async_save(self) -> None:
         """Save records to storage file with backup."""
-        # First, create a backup of the existing file if it exists
-        if self.file_path.exists():
-            backup_suffix = datetime.datetime.now().isoformat().replace(":", "-")
-            backup_path = Path(f"{self.file_path}.{backup_suffix}")
-            # Use contextlib.suppress for backup failure
-            with contextlib.suppress(OSError):
-                await asyncio.to_thread(shutil.copy2, self.file_path, backup_path)
-
-        # Then save the current data using asyncio.to_thread
-        def save_data():
-            with self.file_path.open("w", encoding="utf-8") as f:
-                json.dump(self.data, f, indent=2)
-
-        await asyncio.to_thread(save_data)
-
-        if self.on_change_callback:
-            self.on_change_callback(self.entity)
+        try:
+            await json_file.async_save(self.file_path, self.data)
+        except Exception:
+            # Drop the unsaved change, so it is neither returned nor saved later.
+            self.data = copy.deepcopy(self._saved)
+            raise
+        self._saved = copy.deepcopy(self.data)
 
     def get_records(self) -> list:
         """Get all records.

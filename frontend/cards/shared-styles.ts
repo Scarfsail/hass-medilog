@@ -1,48 +1,10 @@
-import { css } from "lit-element"
+import { css } from "lit"
 export const sharedStyles = css`
-        ha-button.button-active {
-            
-            --mdc-theme-primary: var(--success-color);
-            border-color: var(--primary-color);
-            border: 1px solid var(--primary-color);
-         }      
-         ha-button.button-error{
-            --mdc-theme-primary: var(--error-color);
-          }  
-
-         .dialog-footer {
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            gap: var(--ha-space-3, 12px);
-            width: 100%;
-            flex-wrap: wrap;
-         }
-
-         .dialog-footer__secondary {
-            display: flex;
-            align-items: center;
-            gap: var(--ha-space-3, 12px);
-            margin-right: auto;
-            flex-wrap: wrap;
-         }
-
-         .dialog-footer__primary {
-            display: flex;
-            align-items: center;
-            gap: var(--ha-space-3, 12px);
-         }
-         
          .controls {
              display: flex;
              gap: 8px;
              margin-bottom: 16px;
             align-items: center;
-        }
-        
-        .view-toggle {
-            display: flex;
-            gap: 4px;
         }
 
         .medication-content {

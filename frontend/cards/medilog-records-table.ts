@@ -1,10 +1,10 @@
-import { LitElement, css, html, PropertyValues } from "lit-element"
+import { LitElement, css, html, PropertyValues } from "lit"
 import { customElement, property, state } from "lit/decorators.js";
 import dayjs from "dayjs";
 import duration from 'dayjs/plugin/duration'
 import 'dayjs/locale/cs';
 import { Medication, MedilogRecord, MedilogRecordRaw, MedilogRecordsGroupByTime, PersonInfo } from "./models";
-import type { HomeAssistant } from "../hass-frontend/src/types";
+import type { HomeAssistant } from "../types/ha";
 import { MedilogRecordDetailDialogParams } from "./medilog-record-detail-dialog";
 import { Utils } from "./utils";
 import { getLocalizeFunction, LocalizeFunction } from "./localize/localize";
@@ -87,6 +87,8 @@ export class MedilogRecordsTable extends LitElement {
     @property({ attribute: false }) public hass?: HomeAssistant;
     @property({ attribute: false }) public records?: (MedilogRecord | null)[];
     @property({ attribute: false }) public dataStore!: DataStore;
+    /** The reference time for elapsed times; the current time when not given. */
+    @property({ attribute: false }) public now?: number;
 
     // Lifecycle methods
     willUpdate(changedProperties: PropertyValues) {
@@ -102,7 +104,7 @@ export class MedilogRecordsTable extends LitElement {
         }
 
         if (!this.records) {
-            return html`<ha-circular-progress active></ha-circular-progress>`;
+            return html`<ha-spinner></ha-spinner>`;
         }
 
         if (!this.dataStore || !this._localize) {
@@ -148,7 +150,7 @@ export class MedilogRecordsTable extends LitElement {
                             ${dateSeparator}
                             <tr @click=${() => this.showRecordDetailsDialog(record)}>
                                 <td>${record.datetime.format('HH:mm')}</td>
-                                <td>${Utils.formatDurationFromTo(record.datetime)}</td>
+                                <td>${Utils.formatDurationFromTo(record.datetime, this.now)}</td>
                                 <td>${this._renderMedication(record)}</td>
                                 <td class="temperature-cell">
                                     ${record.temperature ? html`
@@ -175,7 +177,7 @@ export class MedilogRecordsTable extends LitElement {
     private _formatDateSeparator(datetime: dayjs.Dayjs) {
         if (!this._localize) return '';
         const formattedDate = Utils.formatDate(datetime, true, false);
-        const daysAgo = dayjs().startOf('day').diff(datetime.startOf('day'), 'day');
+        const daysAgo = dayjs(this.now).startOf('day').diff(datetime.startOf('day'), 'day');
         
         let relativeText: string;
         if (daysAgo === 0) {

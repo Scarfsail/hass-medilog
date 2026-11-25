@@ -1,4 +1,4 @@
-import type { HomeAssistant } from "../hass-frontend/src/types";
+import type { HomeAssistant } from "../types/ha";
 import { PersonInfo, PersonInfoRaw } from "./models";
 import { Utils } from "./utils";
 
@@ -10,26 +10,24 @@ import { Utils } from "./utils";
 export class PersonsInfo {
     private _persons: PersonInfo[] = [];
     private _personsMap: Map<string, PersonInfo> = new Map();
-    private _hass: HomeAssistant;
+    private _getHass: () => HomeAssistant;
     private _onPersonsFetched: () => void;
 
-    constructor(hass: HomeAssistant, onPersonsFetched: () => void) {
+    constructor(getHass: () => HomeAssistant, onPersonsFetched: () => void) {
         this._persons = [];
         this._personsMap = new Map();
-        this._hass = hass;
+        this._getHass = getHass;
         this._onPersonsFetched = onPersonsFetched;
     }
 
     async fetchPersons() {
-        if (!this._hass) return;
-
         try {
-            const response = await this._hass.callService('medilog', 'get_person_list', {}, {}, true, true);
+            const response = await this._getHass().callService('medilog', 'get_person_list', {}, {}, true, true);
             if (response && response.response.persons) {
                 const persons = (response.response.persons as PersonInfoRaw[]).map((person) => ({
                     entity: person.entity,
-                    name: this._hass?.states[person.entity]?.attributes?.friendly_name ?? person.entity,
-                    entity_picture: this._hass?.states[person.entity]?.attributes?.entity_picture,
+                    name: this._getHass().states[person.entity]?.attributes?.friendly_name ?? person.entity,
+                    entity_picture: this._getHass().states[person.entity]?.attributes?.entity_picture,
                     recent_record: Utils.convertMedilogRecordRawToMedilogRecord(person.recent_record)
                 } as PersonInfo)).sort((a, b) => a.name.localeCompare(b.name));
                 

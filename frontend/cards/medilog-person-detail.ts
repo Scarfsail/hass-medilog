@@ -1,10 +1,10 @@
-import { LitElement, css, html, PropertyValues } from "lit-element"
+import { LitElement, css, html, PropertyValues } from "lit"
 import { customElement, property, state } from "lit/decorators.js";
 import dayjs from "dayjs";
 import duration from 'dayjs/plugin/duration'
 import 'dayjs/locale/cs';
 import { MedilogRecord, MedilogRecordRaw, MedilogRecordsGroupByTime, PersonInfo, PersonInfoRaw, Medication } from "./models";
-import type { HomeAssistant } from "../hass-frontend/src/types";
+import type { HomeAssistant } from "../types/ha";
 import { MedilogRecordDetailDialogParams } from "./medilog-record-detail-dialog";
 import { getLocalizeFunction, LocalizeFunction } from "./localize/localize";
 import "./medilog-records"
@@ -14,6 +14,7 @@ import { Utils } from "./utils";
 import { DataStore } from "./data-store";
 import { MedilogPersonRecordsStore } from "./medilog-person-records-store";
 import { sharedStyles } from "./shared-styles";
+import { mdiPillMultiple, mdiTimelineClock } from "@mdi/js";
 dayjs.extend(duration);
 
 @customElement("medilog-person-detail")
@@ -43,6 +44,7 @@ export class MedilogPersonDetail extends LitElement {
     }
     @property({ attribute: false }) public hass?: HomeAssistant;
     @property({ attribute: false }) public dataStore!: DataStore;
+    @property({ attribute: false }) public now?: number;
 
     // State properties
     @state() private viewMode: 'timeline' | 'medications' = 'timeline';
@@ -70,39 +72,39 @@ export class MedilogPersonDetail extends LitElement {
             return "Person is not defined";
         }
         if (!this._localize) {
-            return html`<ha-circular-progress active></ha-circular-progress>`;
+            return html`<ha-spinner></ha-spinner>`;
         }
 
         // Show initial loading if no store yet
         if (!this._personStore) {
-            return html`<ha-circular-progress active></ha-circular-progress>`;
+            return html`<ha-spinner></ha-spinner>`;
         }
 
         const { visibleGroups, hasMoreGroups } = this._getVisibleGroups();
 
         return html`
             <div class="controls">
-                <div class="view-toggle">
-                    <ha-button .appearance=${this.viewMode === 'timeline' ? 'accent' : 'plain'} @click=${() => this.viewMode = 'timeline'}>
-                        <ha-icon icon="mdi:timeline-clock"></ha-icon>
-                    </ha-button>
-                    <ha-button .appearance=${this.viewMode === 'medications' ? 'accent' : 'plain'} @click=${() => this.viewMode = 'medications'}>
-                        <ha-icon icon="mdi:pill-multiple"></ha-icon>
-                    </ha-button>
-                </div>
+                <ha-button-toggle-group
+                    .buttons=${[
+                        { label: this._localize('views.timeline'), iconPath: mdiTimelineClock, value: 'timeline' },
+                        { label: this._localize('views.medications'), iconPath: mdiPillMultiple, value: 'medications' },
+                    ]}
+                    .active=${this.viewMode}
+                    @value-changed=${(e: CustomEvent<{ value: 'timeline' | 'medications' }>) => this.viewMode = e.detail.value}
+                ></ha-button-toggle-group>
                 <ha-button @click=${this.addNewRecord} .appearance=${'plain'}>
                     <ha-icon icon="mdi:plus"></ha-icon> 
                     ${this._localize('actions.add_record')}
                 </ha-button>
                 ${this._personStore.isLoading ? html`
-                    <ha-circular-progress active indeterminate style="--md-circular-progress-size: 24px; margin-left: 8px;"></ha-circular-progress>
+                    <ha-spinner size="small" style="margin-left: 8px;"></ha-spinner>
                 ` : ''}
             </div>
             
             ${this.viewMode === 'timeline' ? html`
                 ${visibleGroups.map((group, idx) => html`
                     <ha-expansion-panel .outlined=${true} .expanded=${idx == 0} header=${group.from ? `${Utils.formatDate(group.from)} - ${Utils.formatDate(group.to)}` : Utils.formatDate(group.to)}>
-                        <medilog-records .records=${group.records} .hass=${this.hass} .person=${this._person} .dataStore=${this.dataStore}></medilog-records>
+                        <medilog-records .records=${group.records} .hass=${this.hass} .person=${this._person} .dataStore=${this.dataStore} .now=${this.now}></medilog-records>
                     </ha-expansion-panel>
                 `)}
                 ${hasMoreGroups ? html`
@@ -113,7 +115,7 @@ export class MedilogPersonDetail extends LitElement {
                     </div>
                 ` : ''}
             ` : html`
-                <medilog-records-medications .records=${this._personStore.all} .hass=${this.hass} .person=${this._person} .dataStore=${this.dataStore}></medilog-records-medications>
+                <medilog-records-medications .records=${this._personStore.all} .hass=${this.hass} .person=${this._person} .dataStore=${this.dataStore} .now=${this.now}></medilog-records-medications>
             `}
         `
     }

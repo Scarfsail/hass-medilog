@@ -49,23 +49,6 @@ export class Utils {
         return `${minutes}m ${seconds}s`;
     }
 
-    public static formatDaysAgoAsName(dateTimeFrom: dayjs.ConfigType): string {
-        const days = Math.floor(dayjs.duration(this.getDate(dayjs(dateTimeFrom)).diff(this.getDate(dayjs()))).asDays());
-        if (days == 0)
-            return "dnes";
-
-        if (days == 1)
-            return "zítra";
-
-        if (days == 2)
-            return "pozítří";
-
-        if (days >= 3 && days <= 4)
-            return `za ${days} dny`;
-
-        return `za ${days} dní`;
-    }
-
     public static getDurationFromTimeString(time: string): duration.Duration {
         const parts = time.split(":");
         return dayjs.duration({ hours: +parts[0], minutes: +parts[1], seconds: +parts[2] });
