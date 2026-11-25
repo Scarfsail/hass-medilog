@@ -14,8 +14,6 @@ export interface MedicationDialogParams {
     onClose: (changed: boolean) => void;
 }
 
-loadHaForm();
-
 @customElement("medilog-medication-dialog")
 export class MedilogMedicationDialog extends LitElement {
     // Static styles
@@ -69,7 +67,8 @@ export class MedilogMedicationDialog extends LitElement {
     @state() private _errors: { [key: string]: string } = {};
 
     // Public methods
-    public showDialog(params: MedicationDialogParams): void {
+    public async showDialog(params: MedicationDialogParams): Promise<void> {
+        await loadHaForm().catch(console.error);
         this._params = params;
 
         // Pre-fill form data
@@ -240,9 +239,8 @@ export class MedilogMedicationDialog extends LitElement {
             await this._params.medications.saveMedication(medicationData);
             this._handleClose(true);
         } catch (error) {
+            // HA has already shown the reason as a toast; stay open so nothing is lost.
             console.error('Error saving medication:', error);
-            this._errors.name = this._localize?.('medication_dialog.error_save_failed') || '';
-            this.requestUpdate();
         }
     }
 
@@ -259,9 +257,8 @@ export class MedilogMedicationDialog extends LitElement {
             await this._params.medications.deleteMedication(this._params.medication.id);
             this._handleClose(true);
         } catch (error) {
+            // HA has already shown the reason (e.g. the medication is in use) as a toast.
             console.error('Error deleting medication:', error);
-            const errorMessage = this._localize('medications_manager.delete_in_use').replace('{name}', this._params.medication.name);
-            alert(errorMessage);
         }
     }
 

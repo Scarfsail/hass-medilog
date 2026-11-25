@@ -40,7 +40,6 @@
     "active_ingredient": "Účinná látka",
     "error_name_required": "Název je povinný",
     "error_name_exists": "Lék s tímto názvem už existuje",
-    "error_save_failed": "Chyba při ukládání léku",
     "medication_not_found": "Lék nenalezen",
     "create_medication_prompt": "Lék '{name}' nebyl nalezen. Vytvořit nový lék?"
   },
@@ -51,7 +50,6 @@
     "edit": "Upravit",
     "delete": "Smazat",
     "delete_confirm": "Opravdu chcete smazat lék '{name}'?",
-    "delete_in_use": "Nelze smazat lék '{name}', protože je použit v záznamech",
     "empty_state": "Zatím žádné léky. Přidejte svůj první lék.",
     "no_results": "Žádné léky neodpovídají hledání",
     "column_name": "Název",

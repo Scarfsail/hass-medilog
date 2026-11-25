@@ -209,19 +209,16 @@ export class MedilogMedicationsUsage extends LitElement {
 
         const personUsageData = new Map<string, MedilogRecord[]>();
 
-        // Iterate through all persons and collect records with the selected medication
-        for (const person of this.dataStore.persons.all) {
-            try {
-                const personStore = await this.dataStore.records.getStoreForPerson(person);
-                const medicationRecords = personStore.all
-                    .filter(record => record.medication_id === medicationId)
-                    .sort((a, b) => b.datetime.valueOf() - a.datetime.valueOf()); // Sort descending (newest first)
+        const personStores = await Promise.all(
+            this.dataStore.persons.all.map(person => this.dataStore.records.getStoreForPerson(person))
+        );
+        for (const personStore of personStores) {
+            const medicationRecords = personStore.all
+                .filter(record => record.medication_id === medicationId)
+                .sort((a, b) => b.datetime.valueOf() - a.datetime.valueOf()); // Sort descending (newest first)
 
-                if (medicationRecords.length > 0) {
-                    personUsageData.set(person.entity, medicationRecords);
-                }
-            } catch (error) {
-                console.error(`Error loading records for person ${person.entity}:`, error);
+            if (medicationRecords.length > 0) {
+                personUsageData.set(personStore.personEntity, medicationRecords);
             }
         }
 

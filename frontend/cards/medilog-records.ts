@@ -24,6 +24,7 @@ export class MedilogRecords extends LitElement {
     @property({ attribute: false }) public hass?: HomeAssistant;
     @property({ attribute: false }) public records?: (MedilogRecord | null)[];
     @property({ attribute: false }) public dataStore!: DataStore;
+    @property({ attribute: false }) public now?: number;
 
     // State properties
     @state() private visualization: 'chart' | 'table' = 'table';
@@ -52,7 +53,7 @@ export class MedilogRecords extends LitElement {
             </div>
             
             ${this.visualization === 'table'
-                ? html`<medilog-records-table .records=${this.records} .hass=${this.hass} .person=${this.person} .dataStore=${this.dataStore}></medilog-records-table>`
+                ? html`<medilog-records-table .records=${this.records} .hass=${this.hass} .person=${this.person} .dataStore=${this.dataStore} .now=${this.now}></medilog-records-table>`
                 : this.visualization === 'chart'
                     ? html`<medilog-records-chart .records=${this.records} .medications=${this.dataStore.medications}></medilog-records-chart>`
                     : html`<div>Unknown visualization: ${this.visualization}</div>`

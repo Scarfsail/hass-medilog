@@ -5,7 +5,7 @@ import { MedilogRecord, MedilogRecordRaw, Medication } from "./models";
 import type { HomeAssistant } from "../types/ha";
 import { mdiCloseCircle } from '@mdi/js';
 import { sharedStyles } from "./shared-styles";
-import { loadHaForm, loadHaYamlEditor } from "./load-ha-elements";
+import { loadHaForm } from "./load-ha-elements";
 import { getLocalizeFunction, LocalizeFunction } from "./localize/localize";
 import { Utils } from "./utils";
 import "./medilog-medication-dialog";
@@ -19,8 +19,6 @@ export interface MedilogRecordDetailDialogParams {
     personStore: MedilogPersonRecordsStore;
     medications: MedicationsStore;
 }
-
-loadHaForm();
 
 @customElement("medilog-record-detail-dialog")
 export class MedilogRecordDetailDialog extends LitElement {
@@ -100,7 +98,8 @@ export class MedilogRecordDetailDialog extends LitElement {
     @state() private _editedRecord?: MedilogRecord;
 
     // Public methods
-    public showDialog(dialogParams: MedilogRecordDetailDialogParams): void {
+    public async showDialog(dialogParams: MedilogRecordDetailDialogParams): Promise<void> {
+        await loadHaForm().catch(console.error);
         this._params = dialogParams;
         this._editedRecord = dialogParams.record;
     }

@@ -6,6 +6,7 @@ import { sharedStyles, sharedTableStyles } from "./shared-styles";
 import { getLocalizeFunction, LocalizeFunction } from "./localize/localize";
 import { DataStore } from "./data-store";
 import { showMedicationDialog } from "./medilog-medications-manager";
+import { loadHaForm } from "./load-ha-elements";
 
 @customElement("medilog-medications-table")
 export class MedilogMedicationsTable extends LitElement {
@@ -86,6 +87,8 @@ export class MedilogMedicationsTable extends LitElement {
     // Lifecycle methods
     async connectedCallback() {
         super.connectedCallback();
+        // The filter fields are `ha-input`s.
+        loadHaForm().catch(console.error);
         await this._calculateUsageCounts();
     }
 
@@ -253,19 +256,14 @@ export class MedilogMedicationsTable extends LitElement {
             counts.set(med.id, 0);
         }
 
-        // Iterate through all persons and load their stores
-        for (const person of this.dataStore.persons.all) {
-            try {
-                const personStore = await this.dataStore.records.getStoreForPerson(person);
-                // Count records for each medication
-                for (const record of personStore.all) {
-                    if (record.medication_id) {
-                        const currentCount = counts.get(record.medication_id) || 0;
-                        counts.set(record.medication_id, currentCount + 1);
-                    }
+        const personStores = await Promise.all(
+            this.dataStore.persons.all.map(person => this.dataStore.records.getStoreForPerson(person))
+        );
+        for (const personStore of personStores) {
+            for (const record of personStore.all) {
+                if (record.medication_id) {
+                    counts.set(record.medication_id, (counts.get(record.medication_id) || 0) + 1);
                 }
-            } catch (error) {
-                console.error(`Error loading records for person ${person.entity}:`, error);
             }
         }
 

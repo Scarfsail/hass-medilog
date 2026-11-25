@@ -124,7 +124,8 @@ export class MedilogCard extends LitElement implements LovelaceCard {
     @state() private dataStore?: DataStore;
     @state() private activeTab: 'person' | 'medications' = 'person';
     @state() person?: PersonInfo;
-    @state() private _refreshTrigger = 0;
+    /** The reference time elapsed times count to, ticking once a minute. */
+    @state() private _now = Date.now();
 
     // HA-specific property setter
     public set hass(value: HomeAssistant) {
@@ -150,6 +151,7 @@ export class MedilogCard extends LitElement implements LovelaceCard {
     // Lifecycle methods
     connectedCallback() {
         super.connectedCallback();
+        this._now = Date.now();
         
         if (this._hass && !this.dataStore) {
             this._createDataStore();
@@ -157,7 +159,7 @@ export class MedilogCard extends LitElement implements LovelaceCard {
 
         // Update elapsed times every minute
         this._updateInterval = window.setInterval(() => {
-            this._refreshTrigger++;
+            this._now = Date.now();
         }, 60000);
     }
 
@@ -233,7 +235,7 @@ export class MedilogCard extends LitElement implements LovelaceCard {
                 </div>
                 <div class="tab-content">
                     ${this.activeTab === 'person' && this.person 
-                        ? html`<medilog-person-detail .person=${this.person} .dataStore=${this.dataStore!} .hass=${this._hass}></medilog-person-detail>` 
+                        ? html`<medilog-person-detail .person=${this.person} .dataStore=${this.dataStore!} .hass=${this._hass} .now=${this._now}></medilog-person-detail>` 
                         : this.activeTab === 'medications'
                         ? html`<medilog-medications-manager .hass=${this._hass} .dataStore=${this.dataStore}></medilog-medications-manager>`
                         : 'No person selected'}
@@ -255,6 +257,8 @@ export class MedilogCard extends LitElement implements LovelaceCard {
     }
 
     private handleDataChanged(): void {
+        // A record added since the last tick would otherwise count to a stale "now" and show a negative duration.
+        this._now = Date.now();
         this.requestUpdate();
     }
 }
