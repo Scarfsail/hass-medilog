@@ -3,6 +3,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
@@ -52,10 +53,10 @@ jobs:
       - run: npm --prefix frontend test
 
   release:
-    # Gate the release on a green test run, and only release on pushes to main
-    # (not on pull requests).
+    # Gate the release on a green test run, and only release from main: on a
+    # push, or a manual run to recover a release that failed (never on PRs).
     needs: [backend-tests, frontend-tests]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: write
