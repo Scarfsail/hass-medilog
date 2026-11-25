@@ -10,8 +10,10 @@ import pytest
 
 from homeassistant import loader
 from homeassistant.helpers import frame
-from homeassistant.config_entries import ConfigEntries
+from homeassistant.config_entries import ConfigEntries, ConfigEntry
 from homeassistant.core import HomeAssistant
+
+from custom_components.medilog.const import CONF_PERSON_LIST, DOMAIN
 
 
 @pytest.fixture
@@ -41,3 +43,27 @@ def hass_core(tmp_path) -> Callable[[], AbstractAsyncContextManager[HomeAssistan
             await hass.async_stop(force=True)
 
     return _core
+
+
+@pytest.fixture
+def medilog_entry() -> Callable[..., ConfigEntry]:
+    """Build a MediLog entry tracking the given persons.
+
+    It is stored with version "1.0.0", as every existing install's entry is.
+    """
+
+    def _entry(*persons: str) -> ConfigEntry:
+        return ConfigEntry(
+            discovery_keys={},
+            domain=DOMAIN,
+            data={},
+            minor_version=1,
+            options={CONF_PERSON_LIST: list(persons)},
+            source="user",
+            subentries_data=None,
+            title="MediLog",
+            unique_id=None,
+            version="1.0.0",
+        )
+
+    return _entry

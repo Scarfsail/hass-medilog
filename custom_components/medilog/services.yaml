@@ -1,30 +1,24 @@
 add_or_update_record:
-  name: Add or Update Record
-  description: "Add a new medilog record or update an existing one for a person."
   fields:
     person_id:
-      description: "The entity id of the person (e.g., person.john_doe)."
       example: "person.john_doe"
       required: true
       selector:
         entity:
           domain: person
     id:
-      description: "ID of the record (e.g., 09402d80bba64cefb074315f4dc605e5)."
       example: "09402d80bba64cefb074315f4dc605e5"
       required: false
       selector:
         text:
 
     datetime:
-      description: "ISO-formatted datetime for the record (e.g., 2025-02-25T14:30:00)."
       example: "2025-02-25T14:30:00"
       required: true
       selector:
         datetime:
 
     temperature:
-      description: "Optional temperature value."
       example: 37.5
       required: false
       selector:
@@ -35,14 +29,12 @@ add_or_update_record:
           unit_of_measurement: "°C"
 
     medication_id:
-      description: "Optional medication ID reference (from medication database)."
       example: "a1b2c3d4e5f6"
       required: false
       selector:
         text:
 
     medication_amount:
-      description: "Optional medication amount (defaults to 1.0)."
       example: 2.5
       required: false
       selector:
@@ -52,7 +44,6 @@ add_or_update_record:
           step: 0.1
 
     note:
-      description: "Optional note regarding the record."
       example: "Fever reduced after medication"
       required: false
       selector:
@@ -60,11 +51,8 @@ add_or_update_record:
           multiline: true
 
 delete_record:
-  name: Delete Record
-  description: "Delete a medilog record for a person by its datetime."
   fields:
     person_id:
-      description: "The entity id of the person (e.g., person.john_doe)."
       example: "person.john_doe"
       required: true
       selector:
@@ -72,18 +60,14 @@ delete_record:
           domain: person
 
     id:
-      description: "ID of the record to be deleted."
       example: "09402d80bba64cefb074315f4dc605e5"
       required: true
       selector:
         text:
 
 get_records:
-  name: Get Records
-  description: "Retrieve all medilog records for a specific person. An event 'medilog_get_records' will be fired with the records."
   fields:
     person_id:
-      description: "The entity id of the person (e.g., person.john_doe)."
       example: "person.john_doe"
       required: true
       selector:
@@ -91,38 +75,30 @@ get_records:
           domain: person
 
 get_person_list:
-  name: Get Person List
-  description: "Retrieve the list of all persons tracked by medilog."
   fields: {}
 
 # Medication Management Services
 add_or_update_medication:
-  name: Add or Update Medication
-  description: "Add a new medication or update an existing one in the medication database."
   fields:
     id:
-      description: "ID of the medication for updates (omit for new medications)."
       example: "a1b2c3d4e5f6"
       required: false
       selector:
         text:
 
     name:
-      description: "Name of the medication (must be unique)."
       example: "Tantum Verde"
       required: true
       selector:
         text:
 
     units:
-      description: "Optional units for the medication amount (e.g., 'tablets', 'ml', 'sprays')."
       example: "tablets"
       required: false
       selector:
         text:
 
     is_antipyretic:
-      description: "Whether the medication is antipyretic (fever-reducing)."
       example: false
       required: false
       default: false
@@ -130,34 +106,25 @@ add_or_update_medication:
         boolean:
 
     active_ingredient:
-      description: "Optional active ingredient of the medication."
       example: "benzydamine hydrochloride"
       required: false
       selector:
         text:
 
 delete_medication:
-  name: Delete Medication
-  description: "Delete a medication from the database. Cannot delete if medication is referenced by any records."
   fields:
     id:
-      description: "ID of the medication to delete."
       example: "a1b2c3d4e5f6"
       required: true
       selector:
         text:
 
 get_medications:
-  name: Get Medications
-  description: "Retrieve all medications from the medication database."
   fields: {}
 
 get_medication:
-  name: Get Medication
-  description: "Retrieve a specific medication by ID."
   fields:
     id:
-      description: "ID of the medication to retrieve."
       example: "a1b2c3d4e5f6"
       required: true
       selector:

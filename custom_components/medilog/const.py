@@ -3,9 +3,6 @@
 DOMAIN = "medilog"
 NAME = "MediLog"
 
-
-COORDINATOR = "coordinator"
-
 CONF_PERSON_LIST = "person_list"
 
 # Storage file names

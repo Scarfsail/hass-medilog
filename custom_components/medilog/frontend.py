@@ -52,12 +52,12 @@ async def _async_register_card_resource(hass: HomeAssistant) -> None:
     if existing is not None:
         if existing["url"] != versioned_url:
             await resources.async_update_item(existing["id"], {"url": versioned_url})
-        hass.data[DOMAIN][_CARD_RESOURCE_ID] = existing["id"]
+        hass.data.setdefault(DOMAIN, {})[_CARD_RESOURCE_ID] = existing["id"]
     else:
         created = await resources.async_create_item(
             {"res_type": "module", "url": versioned_url}
         )
-        hass.data[DOMAIN][_CARD_RESOURCE_ID] = created["id"]
+        hass.data.setdefault(DOMAIN, {})[_CARD_RESOURCE_ID] = created["id"]
 
 
 async def async_unregister_card_resource(hass: HomeAssistant) -> None:

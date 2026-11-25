@@ -1,36 +1,36 @@
 import logging
 
-from .coordinator import MedilogCoordinator
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.typing import ConfigType
 
-from . import const
-from .const import DOMAIN
+from .const import CONF_PERSON_LIST, DOMAIN
+from .data import MedilogConfigEntry, MedilogData
 from .frontend import async_register_frontend, async_unregister_card_resource
 from .services import async_setup_services
 
 _LOGGER = logging.getLogger(__name__)
 
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
-# If your integration supports config entries, you need to define async_setup_entry.
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Register the services once; they act on whichever entry is loaded."""
+    async_setup_services(hass)
+    return True
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: MedilogConfigEntry) -> bool:
     """Set up the MediLog integration."""
-
-    # Save config entry data if needed.
-    coordinator = MedilogCoordinator(hass, entry)
-    await coordinator.async_setup()
-    await coordinator.async_config_entry_first_refresh()
-    hass.data.setdefault(DOMAIN, {})[const.COORDINATOR] = coordinator
-
-    # Forward setup for the sensor platform
-    await async_setup_services(hass, coordinator)
+    entry.runtime_data = await MedilogData.async_load(
+        hass, entry.options.get(CONF_PERSON_LIST, [])
+    )
     await async_register_frontend(hass)
     _LOGGER.info("MediLog integration has been set up")
     return True
 
 
-# Optionally, define async_unload_entry if you want to support unloading config entries.
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
+async def async_unload_entry(hass: HomeAssistant, entry: MedilogConfigEntry) -> bool:
     """Unload a config entry."""
     await async_unregister_card_resource(hass)
 

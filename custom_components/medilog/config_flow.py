@@ -5,6 +5,7 @@ import secrets
 import voluptuous as vol
 
 from homeassistant import config_entries
+from homeassistant.core import callback
 from homeassistant.helpers import selector
 
 from .const import CONF_PERSON_LIST, DOMAIN, NAME
@@ -13,16 +14,13 @@ from .const import CONF_PERSON_LIST, DOMAIN, NAME
 class MedilogFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Config flow for MediLog."""
 
+    # Stays the string "1.0.0": existing entries store it, and Home Assistant
+    # compares `entry.version > handler.VERSION` before calling any migration,
+    # so an int here raises TypeError ("1.0.0" > 1) and breaks every install.
     VERSION = "1.0.0"
-    CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
 
     async def async_step_user(self, user_input=None):
         """Handle a flow initialized by the user."""
-
-        # Only a single instance of the integration
-        if self._async_current_entries():
-            return self.async_abort(reason="single_instance_allowed")
-
         unique_id = secrets.token_hex(6)
 
         await self.async_set_unique_id(unique_id)
@@ -31,17 +29,14 @@ class MedilogFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_create_entry(title=NAME, data={})
 
     @staticmethod
+    @callback
     def async_get_options_flow(config_entry):
         """Get the options flow."""
-        return OptionsFlowHandler(config_entry)
+        return OptionsFlowHandler()
 
 
-class OptionsFlowHandler(config_entries.OptionsFlow):
-    """Handle options flow."""
-
-    def __init__(self, config_entry) -> None:
-        """Initialize options flow."""
-        super().__init__()
+class OptionsFlowHandler(config_entries.OptionsFlowWithReload):
+    """Handle options flow; the entry reloads when the options change."""
 
     async def async_step_init(self, user_input=None):
         """Manage the options."""

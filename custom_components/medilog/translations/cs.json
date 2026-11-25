@@ -1,0 +1,161 @@
+{
+  "config": {
+    "abort": {
+      "single_instance_allowed": "MediLog je již nastaven. Podporována je pouze jedna instance."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Nastavení MediLogu",
+        "description": "Vyberte osoby, jejichž zdravotní záznamy má MediLog vést.",
+        "data": {
+          "person_list": "Osoby"
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "not_loaded": {
+      "message": "MediLog není načten."
+    },
+    "unknown_person": {
+      "message": "MediLog nevede osobu {person_id}. Přidejte ji v nastavení MediLogu."
+    },
+    "unknown_medication": {
+      "message": "Lék {medication_id} neexistuje. Nejprve lék vytvořte."
+    },
+    "record_not_found": {
+      "message": "Záznam {record_id} nebyl nalezen."
+    },
+    "medication_not_found": {
+      "message": "Lék {medication_id} nebyl nalezen."
+    },
+    "duplicate_medication_name": {
+      "message": "Lék s názvem {name} již existuje."
+    },
+    "medication_in_use": {
+      "message": "Lék nelze smazat, protože ho používají záznamy (počet: {count})."
+    },
+    "save_failed": {
+      "message": "Uložení souboru {file} selhalo: {error}"
+    },
+    "corrupt_file": {
+      "message": "Soubor {file} neobsahuje platný JSON. Obnovte ho z nejnovější zálohy: {backup}"
+    }
+  },
+  "services": {
+    "add_or_update_record": {
+      "name": "Přidat nebo upravit záznam",
+      "description": "Přidá osobě nový záznam, nebo upraví záznam se zadaným ID.",
+      "fields": {
+        "person_id": {
+          "name": "Osoba",
+          "description": "Osoba, ke které záznam patří."
+        },
+        "id": {
+          "name": "ID záznamu",
+          "description": "ID záznamu, který se má upravit. Pro nový záznam nechte prázdné."
+        },
+        "datetime": {
+          "name": "Datum a čas",
+          "description": "Kdy byla teplota změřena nebo lék podán."
+        },
+        "temperature": {
+          "name": "Teplota",
+          "description": "Naměřená tělesná teplota."
+        },
+        "medication_id": {
+          "name": "ID léku",
+          "description": "ID léku z databáze léků."
+        },
+        "medication_amount": {
+          "name": "Množství léku",
+          "description": "Podané množství léku. Výchozí je 1."
+        },
+        "note": {
+          "name": "Poznámka",
+          "description": "Volná poznámka."
+        }
+      }
+    },
+    "delete_record": {
+      "name": "Smazat záznam",
+      "description": "Smaže záznam osoby podle jeho ID.",
+      "fields": {
+        "person_id": {
+          "name": "Osoba",
+          "description": "Osoba, ke které záznam patří."
+        },
+        "id": {
+          "name": "ID záznamu",
+          "description": "ID záznamu, který se má smazat."
+        }
+      }
+    },
+    "get_records": {
+      "name": "Získat záznamy",
+      "description": "Vrátí všechny záznamy osoby.",
+      "fields": {
+        "person_id": {
+          "name": "Osoba",
+          "description": "Osoba, jejíž záznamy se mají vrátit."
+        }
+      }
+    },
+    "get_person_list": {
+      "name": "Získat seznam osob",
+      "description": "Vrátí osoby vedené v MediLogu s jejich posledním záznamem."
+    },
+    "add_or_update_medication": {
+      "name": "Přidat nebo upravit lék",
+      "description": "Přidá nový lék do databáze léků, nebo upraví lék se zadaným ID.",
+      "fields": {
+        "id": {
+          "name": "ID léku",
+          "description": "ID léku, který se má upravit. Pro nový lék nechte prázdné."
+        },
+        "name": {
+          "name": "Název",
+          "description": "Název léku. Musí být jedinečný."
+        },
+        "units": {
+          "name": "Jednotky",
+          "description": "Jednotky množství léku, např. tablety, ml nebo vstřiky."
+        },
+        "is_antipyretic": {
+          "name": "Antipyretikum",
+          "description": "Zda lék snižuje horečku."
+        },
+        "active_ingredient": {
+          "name": "Účinná látka",
+          "description": "Účinná látka léku."
+        }
+      }
+    },
+    "delete_medication": {
+      "name": "Smazat lék",
+      "description": "Smaže lék z databáze. Lék použitý v některém záznamu smazat nelze.",
+      "fields": {
+        "id": {
+          "name": "ID léku",
+          "description": "ID léku, který se má smazat."
+        }
+      }
+    },
+    "get_medications": {
+      "name": "Získat léky",
+      "description": "Vrátí všechny léky z databáze léků."
+    },
+    "get_medication": {
+      "name": "Získat lék",
+      "description": "Vrátí jeden lék podle jeho ID.",
+      "fields": {
+        "id": {
+          "name": "ID léku",
+          "description": "ID léku, který se má vrátit."
+        }
+      }
+    }
+  }
+}

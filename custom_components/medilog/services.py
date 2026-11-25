@@ -1,17 +1,16 @@
 """Service definitions for Medilog custom component."""
 
-import logging
 from typing import Any
 
 import voluptuous as vol
 
-from homeassistant.core import HomeAssistant, SupportsResponse
+from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse, callback
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from .const import DOMAIN
-from .coordinator import MedilogCoordinator
-
-_LOGGER = logging.getLogger(__name__)
+from .data import MedilogConfigEntry, MedilogData
+from .storage import MedilogStorage
 
 SERVICE_ADD_UPDATE = "add_or_update_record"
 SERVICE_DELETE = "delete_record"
@@ -77,267 +76,145 @@ SERVICE_GET_MEDICATION_SCHEMA = vol.Schema(
 )
 
 
-def _create_record_handlers(coordinator: MedilogCoordinator):
-    """Create record-related service handlers."""
-
-    async def handle_add_or_update(call):
-        person_id = call.data["person_id"]
-        record_id = call.data.get("id")
-        record_datetime = call.data["datetime"]
-        temperature = call.data.get("temperature")
-        medication_id = call.data.get("medication_id")
-        medication_amount = call.data.get("medication_amount", 1.0)
-        note = call.data.get("note")
-
-        # Validate medication_id if provided
-        if medication_id:
-            med_storage = coordinator.get_medication_storage()
-            if not med_storage:
-                _LOGGER.error("Medication storage not initialized")
-                return
-            if not med_storage.medication_exists(medication_id):
-                _LOGGER.error(
-                    "Medication with ID '%s' not found. Please create the medication first",
-                    medication_id,
-                )
-                return
-
-        storage = coordinator.get_storage(person_id)
-        if storage is None:
-            _LOGGER.error("No storage found for person: %s", person_id)
-            return
-
-        try:
-            await storage.async_add_or_update_record(
-                record_id,
-                record_datetime,
-                temperature,
-                medication_id,
-                medication_amount,
-                note,
-            )
-            _LOGGER.info(
-                "Record added/updated for %s at %s with ID %s",
-                person_id,
-                record_datetime,
-                record_id,
-            )
-        except OSError as err:
-            _LOGGER.error("Error adding/updating record for %s: %s", person_id, err)
-
-    async def handle_delete_record(call):
-        person_id = call.data["person_id"]
-        record_id = call.data["id"]
-
-        storage = coordinator.get_storage(person_id)
-        if storage is None:
-            _LOGGER.error("No storage found for person: %s", person_id)
-            return
-
-        try:
-            await storage.async_delete_record(record_id)
-            _LOGGER.info("Record deleted for %s with ID %s", person_id, record_id)
-        except (ValueError, OSError) as err:
-            _LOGGER.error(
-                "Error deleting record for %s with ID %s: %s", person_id, record_id, err
-            )
-
-    async def handle_get_records(call) -> dict[str, Any]:
-        """Handle get records service call."""
-        person_id = call.data["person_id"]
-        storage = coordinator.get_storage(person_id)
-        if storage is None:
-            _LOGGER.error("No storage found for person: %s", person_id)
-            return {"records": []}
-
-        records = storage.get_records()
-        return {"records": records}
-
-    async def handle_get_person_list(call) -> dict[str, Any]:
-        """Handle get person list service call."""
-        try:
-            person_list = coordinator.get_person_list()
-        except OSError as err:
-            _LOGGER.error("Error retrieving person list: %s", err)
-            return {"persons": []}
-        else:
-            return {"persons": person_list}
-
-    return (
-        handle_add_or_update,
-        handle_delete_record,
-        handle_get_records,
-        handle_get_person_list,
+def _error(translation_key: str, **placeholders: Any) -> ServiceValidationError:
+    return ServiceValidationError(
+        translation_domain=DOMAIN,
+        translation_key=translation_key,
+        translation_placeholders={k: str(v) for k, v in placeholders.items()},
     )
 
 
-def _create_medication_handlers(coordinator: MedilogCoordinator):
-    """Create medication-related service handlers."""
+def _get_data(call: ServiceCall) -> MedilogData:
+    """Return the runtime data of the loaded entry."""
+    entries: list[MedilogConfigEntry] = call.hass.config_entries.async_loaded_entries(
+        DOMAIN
+    )
+    if not entries:
+        raise _error("not_loaded")
+    return entries[0].runtime_data
 
-    async def handle_add_or_update_medication(call):
-        """Handle add or update medication service call."""
-        medication_id = call.data.get("id")
-        name = call.data["name"]
-        units = call.data.get("units")
-        is_antipyretic = call.data.get("is_antipyretic", False)
-        active_ingredient = call.data.get("active_ingredient")
 
-        med_storage = coordinator.get_medication_storage()
-        if med_storage is None:
-            _LOGGER.error("Medication storage not initialized")
-            return
+def _get_storage(call: ServiceCall) -> MedilogStorage:
+    person_id = call.data["person_id"]
+    storage = _get_data(call).get_storage(person_id)
+    if storage is None:
+        raise _error("unknown_person", person_id=person_id)
+    return storage
 
-        try:
-            result = await med_storage.async_add_or_update_medication(
-                medication_id,
-                name,
-                units,
-                is_antipyretic,
-                active_ingredient,
-            )
-            _LOGGER.info(
-                "Medication %s: %s (ID: %s)",
-                "updated" if medication_id else "created",
-                name,
-                result["id"],
-            )
-        except ValueError as err:
-            _LOGGER.error("Error adding/updating medication: %s", err)
-        except OSError as err:
-            _LOGGER.error("Error saving medication: %s", err)
 
-    async def handle_delete_medication(call):
-        """Handle delete medication service call."""
-        medication_id = call.data["id"]
+async def handle_add_or_update(call: ServiceCall) -> None:
+    """Add a record, or update the one with the given ID."""
+    medication_id = call.data.get("medication_id")
+    if medication_id and not _get_data(call).medication_storage.medication_exists(
+        medication_id
+    ):
+        raise _error("unknown_medication", medication_id=medication_id)
 
-        med_storage = coordinator.get_medication_storage()
-        if med_storage is None:
-            _LOGGER.error("Medication storage not initialized")
-            return
-
-        # Check if medication is in use
-        def check_usage(med_id):
-            return coordinator.is_medication_in_use(med_id)
-
-        try:
-            await med_storage.async_delete_medication(medication_id, check_usage)
-            _LOGGER.info("Medication deleted with ID: %s", medication_id)
-        except ValueError as err:
-            _LOGGER.error("Error deleting medication: %s", err)
-        except OSError as err:
-            _LOGGER.error("Error saving medication storage: %s", err)
-
-    async def handle_get_medications(call) -> dict[str, Any]:
-        """Handle get medications service call."""
-        med_storage = coordinator.get_medication_storage()
-        if med_storage is None:
-            _LOGGER.error("Medication storage not initialized")
-            return {"medications": []}
-
-        medications = med_storage.get_medications()
-        return {"medications": medications}
-
-    async def handle_get_medication(call) -> dict[str, Any]:
-        """Handle get medication service call."""
-        medication_id = call.data["id"]
-
-        med_storage = coordinator.get_medication_storage()
-        if med_storage is None:
-            _LOGGER.error("Medication storage not initialized")
-            return {"medication": None}
-
-        medication = med_storage.get_medication(medication_id)
-        if medication is None:
-            _LOGGER.warning("Medication with ID '%s' not found", medication_id)
-
-        return {"medication": medication}
-
-    return (
-        handle_add_or_update_medication,
-        handle_delete_medication,
-        handle_get_medications,
-        handle_get_medication,
+    storage = _get_storage(call)
+    await storage.async_add_or_update_record(
+        call.data.get("id"),
+        call.data["datetime"],
+        call.data.get("temperature"),
+        medication_id,
+        call.data.get("medication_amount", 1.0),
+        call.data.get("note"),
     )
 
 
-async def async_setup_services(hass: HomeAssistant, coordinator: MedilogCoordinator):
-    """Set up medilog services."""
-    # Create handlers
-    (
-        handle_add_or_update,
-        handle_delete_record,
-        handle_get_records,
-        handle_get_person_list,
-    ) = _create_record_handlers(coordinator)
+async def handle_delete_record(call: ServiceCall) -> None:
+    """Delete a record by ID."""
+    storage = _get_storage(call)
+    record_id = call.data["id"]
+    try:
+        await storage.async_delete_record(record_id)
+    except ValueError as err:
+        raise _error("record_not_found", record_id=record_id) from err
 
-    (
-        handle_add_or_update_medication,
-        handle_delete_medication,
-        handle_get_medications,
-        handle_get_medication,
-    ) = _create_medication_handlers(coordinator)
 
-    # Register services
+async def handle_get_records(call: ServiceCall) -> dict[str, Any]:
+    """Return all records of a person."""
+    return {"records": _get_storage(call).get_records()}
 
-    hass.services.async_register(
-        domain=DOMAIN,
-        service=SERVICE_ADD_UPDATE,
-        service_func=handle_add_or_update,
-        schema=SERVICE_ADD_UPDATE_SCHEMA,
+
+async def handle_get_person_list(call: ServiceCall) -> dict[str, Any]:
+    """Return the persons with their most recent records."""
+    return {"persons": _get_data(call).get_person_list()}
+
+
+async def handle_add_or_update_medication(call: ServiceCall) -> None:
+    """Add a medication, or update the one with the given ID."""
+    med_storage = _get_data(call).medication_storage
+    medication_id = call.data.get("id")
+    name = call.data["name"]
+    if medication_id and not med_storage.medication_exists(medication_id):
+        raise _error("medication_not_found", medication_id=medication_id)
+    if not med_storage.is_medication_name_unique(name, exclude_id=medication_id):
+        raise _error("duplicate_medication_name", name=name)
+
+    await med_storage.async_add_or_update_medication(
+        medication_id,
+        name,
+        call.data.get("units"),
+        call.data.get("is_antipyretic", False),
+        call.data.get("active_ingredient"),
     )
 
-    hass.services.async_register(
-        domain=DOMAIN,
-        service=SERVICE_DELETE,
-        service_func=handle_delete_record,
-        schema=SERVICE_DELETE_SCHEMA,
-    )
 
-    hass.services.async_register(
-        domain=DOMAIN,
-        service=SERVICE_GET_RECORDS,
-        service_func=handle_get_records,
-        schema=SERVICE_GET_RECORDS_SCHEMA,
-        supports_response=SupportsResponse.ONLY,
-    )
+async def handle_delete_medication(call: ServiceCall) -> None:
+    """Delete a medication that no record references."""
+    data = _get_data(call)
+    medication_id = call.data["id"]
+    if not data.medication_storage.medication_exists(medication_id):
+        raise _error("medication_not_found", medication_id=medication_id)
+    if count := data.medication_usage_count(medication_id):
+        raise _error("medication_in_use", count=count)
 
-    hass.services.async_register(
-        domain=DOMAIN,
-        service=SERVICE_GET_PERSON_LIST,
-        service_func=handle_get_person_list,
-        schema=SERVICE_GET_PERSON_LIST_SCHEMA,
-        supports_response=SupportsResponse.ONLY,
-    )
+    await data.medication_storage.async_delete_medication(medication_id)
 
-    # Register medication services
-    hass.services.async_register(
-        domain=DOMAIN,
-        service=SERVICE_ADD_UPDATE_MEDICATION,
-        service_func=handle_add_or_update_medication,
-        schema=SERVICE_ADD_UPDATE_MEDICATION_SCHEMA,
-    )
 
-    hass.services.async_register(
-        domain=DOMAIN,
-        service=SERVICE_DELETE_MEDICATION,
-        service_func=handle_delete_medication,
-        schema=SERVICE_DELETE_MEDICATION_SCHEMA,
-    )
+async def handle_get_medications(call: ServiceCall) -> dict[str, Any]:
+    """Return all medications."""
+    return {"medications": _get_data(call).medication_storage.get_medications()}
 
-    hass.services.async_register(
-        domain=DOMAIN,
-        service=SERVICE_GET_MEDICATIONS,
-        service_func=handle_get_medications,
-        schema=SERVICE_GET_MEDICATIONS_SCHEMA,
-        supports_response=SupportsResponse.ONLY,
-    )
 
-    hass.services.async_register(
-        domain=DOMAIN,
-        service=SERVICE_GET_MEDICATION,
-        service_func=handle_get_medication,
-        schema=SERVICE_GET_MEDICATION_SCHEMA,
-        supports_response=SupportsResponse.ONLY,
-    )
+async def handle_get_medication(call: ServiceCall) -> dict[str, Any]:
+    """Return one medication by ID."""
+    medication_id = call.data["id"]
+    medication = _get_data(call).medication_storage.get_medication(medication_id)
+    if medication is None:
+        raise _error("medication_not_found", medication_id=medication_id)
+    return {"medication": medication}
 
-    return True
+
+@callback
+def async_setup_services(hass: HomeAssistant) -> None:
+    """Register the MediLog services."""
+    for service, handler, schema in (
+        (SERVICE_ADD_UPDATE, handle_add_or_update, SERVICE_ADD_UPDATE_SCHEMA),
+        (SERVICE_DELETE, handle_delete_record, SERVICE_DELETE_SCHEMA),
+        (
+            SERVICE_ADD_UPDATE_MEDICATION,
+            handle_add_or_update_medication,
+            SERVICE_ADD_UPDATE_MEDICATION_SCHEMA,
+        ),
+        (
+            SERVICE_DELETE_MEDICATION,
+            handle_delete_medication,
+            SERVICE_DELETE_MEDICATION_SCHEMA,
+        ),
+    ):
+        hass.services.async_register(DOMAIN, service, handler, schema=schema)
+
+    for service, handler, schema in (
+        (SERVICE_GET_RECORDS, handle_get_records, SERVICE_GET_RECORDS_SCHEMA),
+        (SERVICE_GET_PERSON_LIST, handle_get_person_list, SERVICE_GET_PERSON_LIST_SCHEMA),
+        (SERVICE_GET_MEDICATIONS, handle_get_medications, SERVICE_GET_MEDICATIONS_SCHEMA),
+        (SERVICE_GET_MEDICATION, handle_get_medication, SERVICE_GET_MEDICATION_SCHEMA),
+    ):
+        hass.services.async_register(
+            DOMAIN,
+            service,
+            handler,
+            schema=schema,
+            supports_response=SupportsResponse.ONLY,
+        )
