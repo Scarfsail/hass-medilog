@@ -5,6 +5,7 @@ import type { HomeAssistant } from "../types/ha";
 import { sharedStyles } from "./shared-styles";
 import { getLocalizeFunction, LocalizeFunction } from "./localize/localize";
 import { DataStore } from "./data-store";
+import type { MedilogPersonRecordsStore } from "./medilog-person-records-store";
 import "./medilog-records-table";
 
 @customElement("medilog-medications-usage")
@@ -202,16 +203,25 @@ export class MedilogMedicationsUsage extends LitElement {
         await this._loadUsageData(medicationId);
     }
 
-    private async _loadUsageData(medicationId: string): Promise<void> {
+    /**
+     * With `cachedOnly`, re-read the stores already loaded instead of fetching:
+     * a store reports `records-changed` after every fetch, failed ones too, so
+     * fetching in response would loop while `get_records` keeps failing.
+     */
+    private async _loadUsageData(medicationId: string, cachedOnly = false): Promise<void> {
         if (!this.dataStore?.records || !this.dataStore?.persons) {
             return;
         }
 
         const personUsageData = new Map<string, MedilogRecord[]>();
 
-        const personStores = await Promise.all(
-            this.dataStore.persons.all.map(person => this.dataStore.records.getStoreForPerson(person))
-        );
+        const personStores = cachedOnly
+            ? this.dataStore.persons.all
+                .map(person => this.dataStore.records.getCachedStore(person.entity))
+                .filter((store): store is MedilogPersonRecordsStore => store !== undefined)
+            : await Promise.all(
+                this.dataStore.persons.all.map(person => this.dataStore.records.getStoreForPerson(person))
+            );
         for (const personStore of personStores) {
             const medicationRecords = personStore.all
                 .filter(record => record.medication_id === medicationId)
@@ -228,7 +238,7 @@ export class MedilogMedicationsUsage extends LitElement {
     private async _handleRecordsChanged(): Promise<void> {
         // Reload data for the currently selected medication
         if (this._selectedMedicationId) {
-            await this._loadUsageData(this._selectedMedicationId);
+            await this._loadUsageData(this._selectedMedicationId, true);
         }
     }
 }

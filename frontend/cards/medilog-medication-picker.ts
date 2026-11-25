@@ -98,7 +98,7 @@ export class MedilogMedicationPicker extends LitElement {
         }
 
         .edit-icon {
-            --mdc-icon-button-size: 32px;
+            --ha-icon-button-size: 32px;
             --mdc-icon-size: 18px;
             color: var(--primary-color);
             cursor: pointer;
@@ -174,8 +174,8 @@ export class MedilogMedicationPicker extends LitElement {
                             <table>
                                 <thead>
                                     <tr>
-                                        <th>${this._localize('medication_picker.medication_name')}</th>
-                                        <th>${this._localize('medication_picker.last_taken')}</th>
+                                        <th>${this._localize('medication_picker.column_name')}</th>
+                                        <th>${this._localize('medication_picker.column_last_taken')}</th>
                                         <th class="actions-column"></th>
                                     </tr>
                                 </thead>

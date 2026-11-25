@@ -1,15 +1,25 @@
 {
   "common": {
     "save": "Uložit",
-    "cancel": "Zavřít",
+    "cancel": "Zrušit",
     "delete": "Smazat",
     "duplicate": "Duplikovat",
     "none": "Žádný",
     "table": "Tabulka",
-    "chart": "Graf"
+    "chart": "Graf",
+    "clear": "Vymazat",
+    "edit": "Upravit"
+  },
+  "views": {
+    "timeline": "Časová osa",
+    "medications": "Léky",
+    "list": "Seznam",
+    "usage": "Použití"
   },
   "chart": {
-    "show_medications": "Zobrazit léky"
+    "show_medications": "Zobrazit léky",
+    "temperature": "Teplota",
+    "no_records": "Zatím žádné záznamy"
   },
   "dialog": {
     "edit_record": "Upravit",
@@ -18,7 +28,7 @@
     "medication": "Lék",
     "medication_amount": "Množství",
     "notes": "Poznámky",
-    "delete_confirm": "Opravdu chcete smazat tento záznam?",
+    "delete_confirm": "Smazat záznam?",
     "last_taken": "Naposledy před {duration}",
     "no_medication": "Žádný lék"
   },
@@ -49,7 +59,7 @@
     "add_medication": "Přidat lék",
     "edit": "Upravit",
     "delete": "Smazat",
-    "delete_confirm": "Opravdu chcete smazat lék '{name}'?",
+    "delete_confirm": "Smazat lék?",
     "empty_state": "Zatím žádné léky. Přidejte svůj první lék.",
     "no_results": "Žádné léky neodpovídají hledání",
     "column_name": "Název",

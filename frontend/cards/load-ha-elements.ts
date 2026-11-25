@@ -1,11 +1,11 @@
 /**
  * Home Assistant's own form elements, borrowed from the frontend hosting us.
  *
- * HA registers `ha-input` and `ha-selector` as a side effect of loading the
- * automation editor's chunk, and nothing exports them, so the only way to
- * reach them from a card is to ask a throwaway router to load that chunk and
- * then wait for the tags to appear. Ported from hass-helman's
- * `cards/shared/load-ha-elements.ts`.
+ * HA registers `ha-input` as a side effect of loading the automation editor's
+ * chunk (`ha-selector` is already defined on dashboards, but is awaited here
+ * too), and nothing exports them, so the only way to reach `ha-input` from a
+ * card is to ask a throwaway router to load that chunk and then wait for the
+ * tags to appear. Ported from hass-helman's `cards/shared/load-ha-elements.ts`.
  */
 
 const FORM_ELEMENTS = ["ha-input", "ha-selector"] as const;
@@ -68,3 +68,25 @@ async function loadAutomationPanel(): Promise<void> {
 }
 
 export const loadHaForm = loadOnce(FORM_ELEMENTS, loadAutomationPanel);
+
+/**
+ * `ha-button-toggle-group` ships only with HA's button-toggle selector, not in
+ * the dashboard's own bundle. `ha-selector` is, and it loads a selector's chunk
+ * as soon as it is given one, so a hidden throwaway asks for that chunk.
+ */
+async function loadButtonToggleSelector(): Promise<void> {
+    await customElements.whenDefined("ha-selector");
+
+    const loader = Object.assign(document.createElement("ha-selector"), {
+        selector: { button_toggle: { options: [] } },
+        hidden: true,
+    });
+    document.body.append(loader);
+    try {
+        await customElements.whenDefined("ha-button-toggle-group");
+    } finally {
+        loader.remove();
+    }
+}
+
+export const loadHaButtonToggleGroup = loadOnce(["ha-button-toggle-group"], loadButtonToggleSelector);

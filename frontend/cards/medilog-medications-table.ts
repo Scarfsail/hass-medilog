@@ -24,8 +24,6 @@ export class MedilogMedicationsTable extends LitElement {
 
         .filter-field {
             width: 100%;
-            --mdc-text-field-outlined-idle-border-color: var(--divider-color);
-            --mdc-text-field-outlined-hover-border-color: var(--primary-color);
         }
 
         .empty-state {

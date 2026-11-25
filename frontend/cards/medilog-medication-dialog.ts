@@ -6,6 +6,7 @@ import { sharedStyles } from "./shared-styles";
 import { loadHaForm } from "./load-ha-elements";
 import { getLocalizeFunction, LocalizeFunction } from "./localize/localize";
 import { MedicationsStore } from "./medications-store";
+import { showConfirmDialog } from "./medilog-confirm-dialog";
 
 export interface MedicationDialogParams {
     medication?: Medication;
@@ -33,9 +34,6 @@ export class MedilogMedicationDialog extends LitElement {
             margin-top: 4px;
         }
         .checkbox-field {
-            display: flex;
-            align-items: center;
-            gap: 8px;
             margin-bottom: 16px;
         }
         .form-container {
@@ -146,15 +144,13 @@ export class MedilogMedicationDialog extends LitElement {
                         ></ha-input>
                     </div>
 
-                    <div class="checkbox-field">
-                        <ha-checkbox
-                            .checked=${this._formData.is_antipyretic}
-                            @change=${(e: Event) => {
+                    <ha-checkbox
+                        class="checkbox-field"
+                        .checked=${this._formData.is_antipyretic}
+                        @change=${(e: Event) => {
                 this._formData = { ...this._formData, is_antipyretic: (e.target as HTMLInputElement).checked };
             }}
-                        ></ha-checkbox>
-                        <label>${this._localize('medication_dialog.is_antipyretic')}</label>
-                    </div>
+                    >${this._localize('medication_dialog.is_antipyretic')}</ha-checkbox>
 
                     <div class="field">
                         <ha-input
@@ -168,25 +164,19 @@ export class MedilogMedicationDialog extends LitElement {
                     </div>
                 </div>
 
-                <div slot="footer" class="dialog-footer">
+                <ha-dialog-footer slot="footer">
                     ${isEditMode ? html`
-                        <div class="dialog-footer__secondary">
-                            <ha-button variant="danger" @click=${this._handleDelete}>
-                                ${this._localize('common.delete')}
-                            </ha-button>
-
-                            <ha-button appearance="plain" @click=${this._handleDuplicate}>
-                                ${this._localize('common.duplicate')}
-                            </ha-button>
-                        </div>
-                    ` : nothing}
-
-                    <div class="dialog-footer__primary">
-                        <ha-button appearance="accent" @click=${this._handleSave}>
-                            ${this._localize('common.save')}
+                        <ha-button slot="secondaryAction" variant="danger" @click=${this._handleDelete}>
+                            ${this._localize('common.delete')}
                         </ha-button>
-                    </div>
-                </div>
+                        <ha-button slot="secondaryAction" appearance="plain" @click=${this._handleDuplicate}>
+                            ${this._localize('common.duplicate')}
+                        </ha-button>
+                    ` : nothing}
+                    <ha-button slot="primaryAction" appearance="accent" @click=${this._handleSave}>
+                        ${this._localize('common.save')}
+                    </ha-button>
+                </ha-dialog-footer>
             </ha-dialog>
         `;
     }
@@ -247,9 +237,11 @@ export class MedilogMedicationDialog extends LitElement {
     private async _handleDelete() {
         if (!this._params?.medication || !this._localize) return;
 
-        const confirmMessage = this._localize('medications_manager.delete_confirm').replace('{name}', this._params.medication.name);
-        
-        if (!confirm(confirmMessage)) {
+        const confirmed = await showConfirmDialog(this, {
+            title: this._localize('medications_manager.delete_confirm'),
+            details: [this._params.medication.name],
+        });
+        if (!confirmed) {
             return;
         }
 

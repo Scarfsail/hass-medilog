@@ -14,6 +14,7 @@ import { Utils } from "./utils";
 import { DataStore } from "./data-store";
 import { MedilogPersonRecordsStore } from "./medilog-person-records-store";
 import { sharedStyles } from "./shared-styles";
+import { mdiPillMultiple, mdiTimelineClock } from "@mdi/js";
 dayjs.extend(duration);
 
 @customElement("medilog-person-detail")
@@ -83,14 +84,14 @@ export class MedilogPersonDetail extends LitElement {
 
         return html`
             <div class="controls">
-                <div class="view-toggle">
-                    <ha-button .appearance=${this.viewMode === 'timeline' ? 'accent' : 'plain'} @click=${() => this.viewMode = 'timeline'}>
-                        <ha-icon icon="mdi:timeline-clock"></ha-icon>
-                    </ha-button>
-                    <ha-button .appearance=${this.viewMode === 'medications' ? 'accent' : 'plain'} @click=${() => this.viewMode = 'medications'}>
-                        <ha-icon icon="mdi:pill-multiple"></ha-icon>
-                    </ha-button>
-                </div>
+                <ha-button-toggle-group
+                    .buttons=${[
+                        { label: this._localize('views.timeline'), iconPath: mdiTimelineClock, value: 'timeline' },
+                        { label: this._localize('views.medications'), iconPath: mdiPillMultiple, value: 'medications' },
+                    ]}
+                    .active=${this.viewMode}
+                    @value-changed=${(e: CustomEvent<{ value: 'timeline' | 'medications' }>) => this.viewMode = e.detail.value}
+                ></ha-button-toggle-group>
                 <ha-button @click=${this.addNewRecord} .appearance=${'plain'}>
                     <ha-icon icon="mdi:plus"></ha-icon> 
                     ${this._localize('actions.add_record')}

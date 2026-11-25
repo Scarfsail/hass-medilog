@@ -1,5 +1,7 @@
 import { expect, type Page } from "@playwright/test";
 import { resolve } from "node:path";
+import { HA_BUTTON_TOGGLE_GROUP_STUB } from "./ha-button-toggle-group-stub";
+import { HA_CHECKBOX_STUB } from "./ha-checkbox-stub";
 import { HA_SELECT_STUB } from "./ha-select-stub";
 
 /** The card bundle `global-setup.ts` rebuilds before the suite runs. */
@@ -48,8 +50,8 @@ const RECORDS: Record<string, Array<Record<string, unknown>>> = {
 
 /**
  * Install a fake Home Assistant in a bare page as `window.__fakeHass`, with the
- * `ha-select` stub defined. Its `callService` serves the fixtures above and
- * records every call (a saved record adds one dated "now" to the person's records); with `holdRecords` the `get_records` calls stay pending
+ * `ha-select`, `ha-button-toggle-group` and `ha-checkbox` stubs defined. Its `callService` serves the fixtures above and
+ * records every call (a saved record adds one dated "now" to the person's records, a deleted one goes, deleting an unknown id fails with `record_not_found`); with `holdRecords` the `get_records` calls stay pending
  * until `window.__releaseRecords()`. A service named in `reject` fails with
  * that message and, as HA's `connection-mixin` does for a call made with
  * `notifyOnError`, toasts it first.
@@ -63,7 +65,9 @@ export async function installFakeHass(
     { holdRecords = false, reject = {} as Record<string, string> } = {},
 ): Promise<void> {
     await page.setContent("<!doctype html><html><body></body></html>");
-    await page.addScriptTag({ content: HA_SELECT_STUB });
+    for (const stub of [HA_SELECT_STUB, HA_BUTTON_TOGGLE_GROUP_STUB, HA_CHECKBOX_STUB]) {
+        await page.addScriptTag({ content: stub });
+    }
     await page.evaluate(({ persons, medications, records, holdRecords, reject }) => {
         window.__serviceCalls = [];
         window.__notifications = [];
@@ -99,6 +103,13 @@ export async function installFakeHass(
                 return {};
             },
             get_records: (data) => ({ records: records[data.person_id as string] ?? [] }),
+            delete_record: (data) => {
+                const personRecords = records[data.person_id as string] ?? [];
+                const index = personRecords.findIndex((record) => record.id === data.id);
+                if (index === -1) throw { code: "record_not_found", message: `Record ${data.id} not found` };
+                personRecords.splice(index, 1);
+                return {};
+            },
         };
         window.__fakeHass = {
             language: "cs",
@@ -115,19 +126,28 @@ export async function installFakeHass(
                 notifyOnError = true,
             ) => {
                 window.__serviceCalls.push({ domain, service, data });
-                const rejection = reject[service];
-                if (rejection !== undefined) {
+                const fail = (error: { code: string; message: string }) => {
                     if (notifyOnError) {
                         document.body.dispatchEvent(new CustomEvent("hass-notification", {
-                            detail: { message: rejection },
+                            detail: { message: error.message },
                             bubbles: true,
                             composed: true,
                         }));
                     }
-                    throw { code: "service_validation_error", message: rejection };
+                    throw error;
+                };
+                const rejection = reject[service];
+                if (rejection !== undefined) {
+                    fail({ code: "service_validation_error", message: rejection });
                 }
                 if (holdRecords && service === "get_records") await new Promise<void>((release) => held.push(release));
-                return { context: { id: "ctx", parent_id: null, user_id: null }, response: responses[service]?.(data) };
+                let response: unknown;
+                try {
+                    response = responses[service]?.(data);
+                } catch (error) {
+                    fail(error as { code: string; message: string });
+                }
+                return { context: { id: "ctx", parent_id: null, user_id: null }, response };
             },
         };
     }, { persons: PERSONS, medications: MEDICATIONS, records: RECORDS, holdRecords, reject });

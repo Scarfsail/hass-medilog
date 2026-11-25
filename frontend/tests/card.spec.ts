@@ -22,7 +22,7 @@ test("the Usage view's select lists the medications and loads the picked one's u
 
     const card = page.locator("medilog-card");
     await card.locator(".tab").last().click();
-    await card.locator("medilog-medications-manager .view-toggle ha-button").nth(1).dispatchEvent("click");
+    await card.locator('medilog-medications-manager ha-button-toggle-group button[data-value="usage"]').click();
 
     const select = card.locator("medilog-medications-usage ha-select");
     const labels = [...MEDICATIONS]
@@ -33,6 +33,30 @@ test("the Usage view's select lists the medications and loads the picked one's u
     await select.locator('button[data-item="med-paralen"]').click();
     await expect(card.locator("medilog-medications-usage ha-expansion-panel")).toHaveCount(1);
     await expect(card.locator("medilog-medications-usage ha-expansion-panel")).toHaveJSProperty("header", "Alice (1 záznam)");
+});
+
+test("with get_records failing, picking a medication in Usage fetches once per person, not in a loop", async ({ page }) => {
+    const reason = "Integrace medilog není načtena";
+    await installFakeHass(page, { reject: { get_records: reason } });
+    await mountCard(page);
+
+    const card = page.locator("medilog-card");
+    await card.locator(".tab").last().click();
+    await card.locator('medilog-medications-manager ha-button-toggle-group button[data-value="usage"]').click();
+    const usage = card.locator("medilog-medications-usage");
+    await expect(usage.locator("ha-select")).toBeAttached();
+
+    const recordCalls = () => page.evaluate(() => window.__serviceCalls.filter((call) => call.service === "get_records").length);
+    const toasts = () => page.evaluate(() => window.__notifications.length);
+    const callsBefore = await recordCalls();
+    const toastsBefore = await toasts();
+
+    await usage.locator('ha-select button[data-item="med-paralen"]').click();
+    await expect(usage.getByText("Žádné záznamy pro vybraný lék")).toBeVisible();
+    // A loop would keep calling; give it time to show.
+    await page.waitForTimeout(500);
+    expect(await recordCalls() - callsBefore).toBeLessThanOrEqual(PERSONS.length);
+    expect(await toasts() - toastsBefore).toBeLessThanOrEqual(PERSONS.length);
 });
 
 test("opening Medications loads every person's records at once", async ({ page }) => {

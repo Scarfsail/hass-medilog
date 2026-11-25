@@ -11,6 +11,7 @@ import { sharedStyles } from "./shared-styles";
 import { getLocalizeFunction } from "./localize/localize";
 import { DataStore } from "./data-store";
 import { Utils } from "./utils";
+import { loadHaButtonToggleGroup } from "./load-ha-elements";
 dayjs.extend(duration);
 
 interface MedilogCardConfig extends LovelaceCardConfig {
@@ -152,6 +153,7 @@ export class MedilogCard extends LitElement implements LovelaceCard {
     connectedCallback() {
         super.connectedCallback();
         this._now = Date.now();
+        loadHaButtonToggleGroup().catch(console.error);
         
         if (this._hass && !this.dataStore) {
             this._createDataStore();
